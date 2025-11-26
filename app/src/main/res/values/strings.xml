@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">SD.cpp</string>
+    <string name="request_permission">Request MANAGE_EXTERNAL_STORAGE Permission</string>
+    <string name="submit">submit</string>
+    <string name="close">X</string>
+    <string name="field_prompt">prompt:</string>
+    <string name="default_prompt">HQ photo of snowy mountains, blue sky</string>
+    <string name="field_negative">neg:</string>
+    <string name="default_negative">blurry</string>
+    <string name="field_steps">steps:</string>
+    <string name="default_steps">18</string>
+    <string name="field_seed">seed:</string>
+    <string name="field_threads">threads:</string>
+    <string name="default_minus1">-1</string>
+    <string name="field_modelfile">select</string>
+    <string name="field_taesd">"use taesd</string>
+    <string name="field_lorapath">lora path</string>
+    <string name="field_widthXheight">W x H:</string>
+    <string name="default_height">512</string>
+    <string name="default_width">256</string>
+    <string name="field_cfgs">cfg val:</string>
+    <string name="default_cfg">7</string>
+</resources>

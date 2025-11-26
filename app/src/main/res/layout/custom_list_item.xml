@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="1000pt"
+    android:layout_height="14sp"
+    android:orientation="vertical">
+    <TextView
+        android:id="@+id/output_item_line"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fontFamily="monospace"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:background="@color/black"
+        android:textColor= "@color/teal_200"
+        android:textSize="11sp" />
+</LinearLayout>
