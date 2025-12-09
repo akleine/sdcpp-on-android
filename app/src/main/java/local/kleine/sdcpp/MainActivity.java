@@ -1,5 +1,7 @@
 package local.kleine.sdcpp;
 
+import static java.util.Arrays.sort;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -29,14 +31,16 @@ import androidx.activity.result.contract.ActivityResultContracts;
 
 import java.io.File;
 import java.util.ArrayList;
+
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private Activity myActivity;
     private Process process;
     private static final String sdFileName = "libsd.so"; // "sd" executable needs renaming because it is now located inside jniLibs
-    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, loraPath;
+    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, helperPath;
     private final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
             getAbsolutePath();
@@ -118,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
             submitButton.setEnabled(false);
             fileList.add("At first copy SD model file to this device.");
         }
+        Collections.sort(fileList);
         Spinner spinner1 = findViewById(R.id.spinner1);
         spinner1.setOnItemSelectedListener(new ItemSelectedListener());
         ArrayAdapter<String> adapter1 = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, fileList);
@@ -137,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         taesdchecker.setEnabled(!taesdModel.isEmpty());
         taesdchecker.setChecked(!taesdModel.isEmpty());
         loraPathView = findViewById(R.id.lorapath);
-        loraPathView.setText(loraPath);
+        loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v ->
         {
             View wrapperLinearLayout = findViewById(R.id.wrapperLinearLayout);
@@ -154,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                     "-p", prompt,
                     "-v",
                     "-o", outputImagePath,
-                    "--lora-model-dir", loraPath,
+                    "--lora-model-dir", helperPath,
                     "--sampling-method", selectedSampler,
                     "--taesd", taesdchecker.isChecked() ? taesdModel : "",
                     "--threads", check(threadsEditor.getText().toString(), "-1"),
@@ -163,6 +168,9 @@ public class MainActivity extends AppCompatActivity {
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
+                    "--diffusion-fa",
+                    "--vae", helperPath + "/sdxl_vae.safetensors",
+                    "--vae-tiling",
                     // "--scheduler", "discrete" "karras",
             };
             new sdIOThread((MainActivity) myActivity, arguments, sdWorkPath).start();
@@ -288,22 +296,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void listFilesRecursively(File directory, List<String> fileList, int depth) {
-        if (depth > 3) return;                              // limit recursion depth
         try {
             File[] files = directory.listFiles();
             if (files != null) {
                 for (File file : files) {
                     if (file.isDirectory()) {
-                        listFilesRecursively(file, fileList, depth + 1);
+                        listFilesRecursively(file, fileList, depth );
                     } else {
                         String fileName = file.getName();
-                        if (fileName.contains(".ckpt") || fileName.contains(".safetensors")) {
+                        if (fileName.contains(".ckpt") ||
+                                fileName.contains(".gguf") ||
+                                fileName.contains(".safetensors")) {
                             if (fileName.contains("taesd")) {
                                 taesdModel = file.getAbsolutePath();
                             } else if (fileName.contains("lora")) {
-                                loraPath = file.getParent();
+                                helperPath = file.getParent();      // for LoRA and VAE etc
                             } else {
-
                                 if (file.length() > (500 * 1024 * 1024)) {
                                     fileList.add(file.getAbsolutePath());
                                 }
@@ -315,6 +323,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (
                 SecurityException ignored) {
         }
+        return;
     }
 
     @Override

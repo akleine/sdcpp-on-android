@@ -46,7 +46,7 @@ MIT, the same license as sd.cpp.
 This app requires extensive storage permissions to function. It needs to read access to load the model files you provide and write access to save the generated images. We value your privacy and no data is collected or transmitted by this app. You can verify this by reviewing the source code.
 
 ## Native code:
-**IMPORTANT**: this project contains compiled code from sd.cpp (commit #59ebdf0b), https://github.com/leejet/stable-diffusion.cpp/commit/59ebdf0bb5b3a6c83d92ca90fd820707fb154e9d  
+**IMPORTANT**: this project contains compiled code from sd.cpp (commit #bfbb929), https://github.com/leejet/stable-diffusion.cpp/commit/bfbb9297900a0ba34d651337455baf6553c20d4d
 You are encouraged to build the sd executable yourself using Android NDK, see the sd.cpp build documentation:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md     
 The included binary was built in Termux using the following commands:
 ```sh
