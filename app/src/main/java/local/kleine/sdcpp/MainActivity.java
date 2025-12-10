@@ -1,7 +1,5 @@
 package local.kleine.sdcpp;
 
-import static java.util.Arrays.sort;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -17,6 +15,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -40,14 +39,13 @@ public class MainActivity extends AppCompatActivity {
     private Activity myActivity;
     private Process process;
     private static final String sdFileName = "libsd.so"; // "sd" executable needs renaming because it is now located inside jniLibs
-    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, helperPath;
+    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, vaeModel, helperPath;
     private final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
             getAbsolutePath();
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
-            widthEditor, heightEditor, cfgscaleEditor, threadsEditor;
-    private CheckBox taesdchecker;
-    private TextView loraPathView;
+            widthEditor, heightEditor, cfgscaleEditor;
+    private CheckBox taesdchecker, vaechecker;
     private ListView sdLogView;
     private ImageView imageOutputView;
     private ArrayList<String> outputArrayList;
@@ -91,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     public void runSDcpp() {
         androidx.appcompat.app.ActionBar ab = getSupportActionBar();
         if (ab != null) {
-            ab.hide();                                             // request all visible space available
+            ab.hide();                                                      // request all visible space available
         }
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE); // needed for sd log output
         setContentView(R.layout.activity_main);
@@ -114,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
         widthEditor = findViewById(R.id.stringwidth);
         heightEditor = findViewById(R.id.stringheight);
         seedEditor = findViewById(R.id.stringseed);
-        threadsEditor = findViewById(R.id.stringthreads);
         cfgscaleEditor = findViewById(R.id.stringcfgscale);
         Button submitButton = findViewById(R.id.submitButton);
         fileList = listExternalFiles(sdWorkPath);
@@ -137,11 +134,20 @@ public class MainActivity extends AppCompatActivity {
         spinner2.setAdapter(adapter2);
 
         TextView taesdview = findViewById(R.id.taesdmodel);
-        taesdview.setText(taesdModel);
+        if (!taesdModel.isEmpty()) {
+            taesdview.setText(taesdModel.substring(taesdModel.lastIndexOf('/') + 1) + "  (in lora path)");
+        }
+        TextView vaeview = findViewById(R.id.vaemodel);
+        if (!vaeModel.isEmpty()) {
+            vaeview.setText(vaeModel.substring(vaeModel.lastIndexOf('/') + 1) + "  (in lora path)");
+        }
         taesdchecker = findViewById(R.id.taesdchecker);
+        taesdchecker.setOnCheckedChangeListener(new onCheckedChangeListener());
+        vaechecker = findViewById(R.id.vaechecker);
+        vaechecker.setOnCheckedChangeListener(new onCheckedChangeListener());
         taesdchecker.setEnabled(!taesdModel.isEmpty());
-        taesdchecker.setChecked(!taesdModel.isEmpty());
-        loraPathView = findViewById(R.id.lorapath);
+        vaechecker.setEnabled(!vaeModel.isEmpty());
+        TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v ->
         {
@@ -162,14 +168,13 @@ public class MainActivity extends AppCompatActivity {
                     "--lora-model-dir", helperPath,
                     "--sampling-method", selectedSampler,
                     "--taesd", taesdchecker.isChecked() ? taesdModel : "",
-                    "--threads", check(threadsEditor.getText().toString(), "-1"),
+                    "--vae", vaechecker.isChecked() ? vaeModel : "",
                     "--cfg-scale", check(cfgscaleEditor.getText().toString(), "7.0"),
                     "--seed", check(seedEditor.getText().toString(), "-1"),
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
                     "--diffusion-fa",
-                    "--vae", helperPath + "/sdxl_vae.safetensors",
                     "--vae-tiling",
                     // "--scheduler", "discrete" "karras",
             };
@@ -252,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
         if (!input.isEmpty()) {
             try {
                 int number = Integer.parseInt(input);
-                int rounded = (number + 63) / 64 * 64;      // round up for 64
+                int rounded = (number + 63) / 64 * 64;            // round up for 64
                 def = Integer.toString(rounded);
             } catch (NumberFormatException ignored) {
             }
@@ -287,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
 
     @NonNull
     private List<String> listExternalFiles(String storagePath) {
+        taesdModel = vaeModel = helperPath = "";
         List<String> fileList = new ArrayList<>();
         File storageRoot = new File(storagePath);
         if (storageRoot.exists() && storageRoot.canRead()) {
@@ -301,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
             if (files != null) {
                 for (File file : files) {
                     if (file.isDirectory()) {
-                        listFilesRecursively(file, fileList, depth );
+                        listFilesRecursively(file, fileList, depth);
                     } else {
                         String fileName = file.getName();
                         if (fileName.contains(".ckpt") ||
@@ -309,11 +315,15 @@ public class MainActivity extends AppCompatActivity {
                                 fileName.contains(".safetensors")) {
                             if (fileName.contains("taesd")) {
                                 taesdModel = file.getAbsolutePath();
-                            } else if (fileName.contains("lora")) {
-                                helperPath = file.getParent();      // for LoRA and VAE etc
                             } else {
-                                if (file.length() > (500 * 1024 * 1024)) {
-                                    fileList.add(file.getAbsolutePath());
+                                if (fileName.contains("sdxl_vae")) {
+                                    vaeModel = file.getAbsolutePath();
+                                } else if (fileName.contains("lora")) {
+                                    helperPath = file.getParent();      // for LoRA and VAE etc
+                                } else {
+                                    if (file.length() > (500 * 1024 * 1024)) {
+                                        fileList.add(file.getAbsolutePath());
+                                    }
                                 }
                             }
                         }
@@ -323,7 +333,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (
                 SecurityException ignored) {
         }
-        return;
     }
 
     @Override
@@ -360,6 +369,22 @@ public class MainActivity extends AppCompatActivity {
         public void onNothingSelected(AdapterView<?> parent) {
         }
     }
+
+    public class onCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+            if (checked) {
+                if (compoundButton.getId() == R.id.vaechecker) {
+                    taesdchecker.setChecked(false);
+                } else {
+                    if (compoundButton.getId() == R.id.taesdchecker) {
+                        vaechecker.setChecked(false);
+                    }
+                }
+            }
+        }
+    }
+
 /*
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {

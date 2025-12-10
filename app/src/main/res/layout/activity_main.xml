@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical">
+    android:orientation="horizontal">
 
     <LinearLayout
         android:id="@+id/wrapperLinearLayout"
@@ -88,6 +88,30 @@
             android:layout_marginBottom="0dp"
             android:orientation="horizontal">
 
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.2"
+                android:text="@string/field_lorapath"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/lorapath"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.8"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="0dp"
+            android:orientation="horizontal">
+
             <CheckBox
                 android:id="@+id/taesdchecker"
                 android:layout_width="0dp"
@@ -113,24 +137,23 @@
             android:layout_marginBottom="0dp"
             android:orientation="horizontal">
 
-            <TextView
+            <CheckBox
+                android:id="@+id/vaechecker"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.2"
-                android:text="@string/field_lorapath"
+                android:text="@string/field_vae"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/lorapath"
+                android:id="@+id/vaemodel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.8"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
-
         </LinearLayout>
-
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -141,7 +164,7 @@
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.1"
+                android:layout_weight="0.07"
                 android:text="@string/field_steps"
                 android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
@@ -150,16 +173,34 @@
                 android:id="@+id/stringsteps"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.1"
+                android:layout_weight="0.05"
+                android:gravity="center"
                 android:inputType="number"
                 android:singleLine="true"
-                android:gravity="center"
                 android:text="@string/default_steps" />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.1"
+                android:layout_weight="0.07"
+                android:text="@string/field_seed"
+                android:textAlignment="gravity"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <EditText
+                android:id="@+id/stringseed"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.06"
+                android:gravity="center"
+                android:inputType="numberSigned"
+                android:singleLine="true"
+                android:text="@string/default_minus1" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.08"
                 android:text="@string/field_widthXheight"
                 android:textAlignment="gravity"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
@@ -168,21 +209,39 @@
                 android:id="@+id/stringwidth"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.1"
+                android:layout_weight="0.08"
+                android:gravity="center"
                 android:inputType="number"
                 android:singleLine="true"
-                android:gravity="center"
                 android:text="@string/default_height" />
 
             <EditText
                 android:id="@+id/stringheight"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.1"
+                android:layout_weight="0.08"
+                android:gravity="center"
                 android:inputType="number"
                 android:singleLine="true"
-                android:gravity="center"
                 android:text="@string/default_width" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.05"
+                android:text="@string/field_cfgs"
+                android:textAlignment="center"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <EditText
+                android:id="@+id/stringcfgscale"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.03"
+                android:gravity="center"
+                android:inputType="number"
+                android:singleLine="true"
+                android:text="@string/default_cfg" />
 
             <Spinner
                 android:id="@+id/spinner2"
@@ -193,88 +252,17 @@
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 tools:ignore="ExtraText" />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.3"
-                android:text="" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:text="@string/field_cfgs"
-                android:textAlignment="center"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <EditText
-                android:id="@+id/stringcfgscale"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:inputType="number"
-                android:singleLine="true"
-                android:gravity="center"
-                android:text="@string/default_cfg" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:text="@string/field_threads"
-                android:textAlignment="gravity"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <EditText
-                android:id="@+id/stringthreads"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:inputType="number"
-                android:singleLine="true"
-                android:gravity="center"
-                android:text="@string/default_minus1" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:text="@string/field_seed"
-                android:textAlignment="gravity"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <EditText
-                android:id="@+id/stringseed"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:inputType="numberSigned"
-                android:singleLine="true"
-                android:gravity="center"
-                android:text="@string/default_minus1" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.2"
-                android:text="" />
 
             <Button
                 android:id="@+id/submitButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.2"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="0.15"
                 android:text="@string/submit" />
-
         </LinearLayout>
+
+
     </LinearLayout>
 
     <FrameLayout

@@ -10,7 +10,6 @@
     <string name="field_steps">steps:</string>
     <string name="default_steps">18</string>
     <string name="field_seed">seed:</string>
-    <string name="field_threads">threads:</string>
     <string name="default_minus1">-1</string>
     <string name="field_modelfile">select</string>
     <string name="field_taesd">"use taesd</string>
@@ -18,6 +17,7 @@
     <string name="field_widthXheight">W x H:</string>
     <string name="default_height">512</string>
     <string name="default_width">256</string>
-    <string name="field_cfgs">cfg val:</string>
+    <string name="field_cfgs">cfg:</string>
     <string name="default_cfg">7</string>
+    <string name="field_vae">use vae</string>
 </resources>
