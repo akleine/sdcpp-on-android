@@ -15,7 +15,7 @@ Download these safetensors or ckpt files using your favorite web browser and sto
 
 * Grant permissions: Confirm the required storage permissions (see Security & Privacy Note below).
     
-* Generate an image in three steps:
+* Generate an SD1.x image in three steps:
 
 | Step 1: first enter some input:|
 | :----- |
@@ -31,7 +31,25 @@ Download these safetensors or ckpt files using your favorite web browser and sto
 | :----- |
 | ![](assets/step3.jpg) |
  
-The generated image file (PNG) is saved in 'Download' folder, called outputXXXXXXXXXX.png, where XXXXXXXXXX is the Unix timestamp of when the generation started.
+
+* Generate an SSD1B image in three steps:
+
+| Step 1: first enter some input:|
+| :----- |
+| ![](assets/step11.jpg) |
+
+
+| Step 2: wait some time, depending on your device:|
+| :----- |
+| ![](assets/step12.jpg) |
+
+
+| Step 3: view your result:|
+| :----- |
+| ![](assets/step13.jpg) |
+ 
+
+The generated image files (PNG) are saved in 'Download' folder, called outputXXXXXXXXXX.png, where XXXXXXXXXX is the Unix timestamp of when the generation started.
         
 ## Build Instructions: 
 
