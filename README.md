@@ -2,7 +2,7 @@
 
 ## Purpose:
 
-This project depends entirely on the excellent work of leejet and his contributors writing the **stable-diffusion.cpp** project ( https://github.com/leejet/stable-diffusion.cpp ). Many thanks for their efforts! Note that this implementation only uses a small subset (T2I) of sd.cpp's full feature set.
+An interface for Stable Diffusion, with focus on image generation by entering text prompts. This project depends entirely on the excellent work of leejet and his contributors writing the **stable-diffusion.cpp** project ( https://github.com/leejet/stable-diffusion.cpp ). Many thanks for their efforts! Note that this implementation only uses a small subset (T2I) of sd.cpp's full feature set.
 
 ## Installation Instructions: 
 
@@ -84,7 +84,7 @@ This app requires extensive storage permissions to function. It needs to read ac
 
 
 ## Native code:
-**IMPORTANT**: this project contains compiled code from sd.cpp (commit #7010bb4), https://github.com/leejet/stable-diffusion.cpp/commit/7010bb4dff7bd55b03d35ef9772142c21699eba9
+**IMPORTANT**: this project contains compiled code from sd.cpp (commit #c6206fb), https://github.com/leejet/stable-diffusion.cpp/commit/c6206fb351fe63e06525fb4eede51292d82476f4
 You are encouraged to build the sd executable yourself using Android NDK, see the sd.cpp build documentation:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md     
 The included binary was built in Termux using the following commands:
 ```sh
