@@ -91,7 +91,7 @@
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.2"
+                android:layout_weight="0.25"
                 android:text="@string/field_lorapath"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -99,7 +99,7 @@
                 android:id="@+id/lorapath"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.8"
+                android:layout_weight="0.75"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
@@ -116,7 +116,7 @@
                 android:id="@+id/taesdchecker"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.2"
+                android:layout_weight="0.25"
                 android:text="@string/field_taesd"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -124,7 +124,7 @@
                 android:id="@+id/taesdmodel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.8"
+                android:layout_weight="0.75"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
@@ -138,18 +138,18 @@
             android:orientation="horizontal">
 
             <CheckBox
-                android:id="@+id/vaechecker"
+                android:id="@+id/taesdXLchecker"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.2"
-                android:text="@string/field_vae"
+                android:layout_weight="0.25"
+                android:text="@string/field_taesdXL"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
-                android:id="@+id/vaemodel"
+                android:id="@+id/taesdXLmodel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.8"
+                android:layout_weight="0.75"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 android:textAppearance="?android:attr/textAppearanceMedium" />

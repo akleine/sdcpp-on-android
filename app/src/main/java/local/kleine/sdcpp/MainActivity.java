@@ -39,13 +39,13 @@ public class MainActivity extends AppCompatActivity {
     private Activity myActivity;
     private Process process;
     private static final String sdFileName = "libsd.so"; // "sd" executable needs renaming because it is now located inside jniLibs
-    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, vaeModel, helperPath;
+    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, taesdXLModel, helperPath;
     private final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
             getAbsolutePath();
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor;
-    private CheckBox taesdchecker, vaechecker;
+    private CheckBox taesdchecker, taesdXLchecker;
     private ListView sdLogView;
     private ImageView imageOutputView;
     private ArrayList<String> outputArrayList;
@@ -137,16 +137,16 @@ public class MainActivity extends AppCompatActivity {
         if (!taesdModel.isEmpty()) {
             taesdview.setText(taesdModel.substring(taesdModel.lastIndexOf('/') + 1) + "  (in lora path)");
         }
-        TextView vaeview = findViewById(R.id.vaemodel);
-        if (!vaeModel.isEmpty()) {
-            vaeview.setText(vaeModel.substring(vaeModel.lastIndexOf('/') + 1) + "  (in lora path)");
+        TextView taesdXLview = findViewById(R.id.taesdXLmodel);
+        if (!taesdXLModel.isEmpty()) {
+            taesdXLview.setText(taesdXLModel.substring(taesdXLModel.lastIndexOf('/') + 1) + "  (in lora path)");
         }
         taesdchecker = findViewById(R.id.taesdchecker);
         taesdchecker.setOnCheckedChangeListener(new onCheckedChangeListener());
-        vaechecker = findViewById(R.id.vaechecker);
-        vaechecker.setOnCheckedChangeListener(new onCheckedChangeListener());
+        taesdXLchecker = findViewById(R.id.taesdXLchecker);
+        taesdXLchecker.setOnCheckedChangeListener(new onCheckedChangeListener());
         taesdchecker.setEnabled(!taesdModel.isEmpty());
-        vaechecker.setEnabled(!vaeModel.isEmpty());
+        taesdXLchecker.setEnabled(!taesdXLModel.isEmpty());
         TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v ->
@@ -159,6 +159,13 @@ public class MainActivity extends AppCompatActivity {
             }
             String negative = negativeEditor.getText().toString();
             outputImagePath = sdWorkPath + "/output" + System.currentTimeMillis() / 1000L + ".png";
+            String taesdoption = "";
+            if (taesdchecker.isChecked()) {
+                taesdoption = taesdModel;
+            }
+            if (taesdXLchecker.isChecked()) {
+                taesdoption = taesdXLModel;
+            }
             String[] arguments = new String[]{sdProgramPath,
                     "-m", selectedModelfile,
                     "-n", negative,
@@ -167,8 +174,7 @@ public class MainActivity extends AppCompatActivity {
                     "-o", outputImagePath,
                     "--lora-model-dir", helperPath,
                     "--sampling-method", selectedSampler,
-                    "--taesd", taesdchecker.isChecked() ? taesdModel : "",
-                    "--vae", vaechecker.isChecked() ? vaeModel : "",
+                    "--taesd", taesdoption,
                     "--cfg-scale", check(cfgscaleEditor.getText().toString(), "7.0"),
                     "--seed", check(seedEditor.getText().toString(), "-1"),
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
@@ -292,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
 
     @NonNull
     private List<String> listExternalFiles(String storagePath) {
-        taesdModel = vaeModel = helperPath = "";
+        taesdModel = taesdXLModel = helperPath = "";
         List<String> fileList = new ArrayList<>();
         File storageRoot = new File(storagePath);
         if (storageRoot.exists() && storageRoot.canRead()) {
@@ -313,13 +319,13 @@ public class MainActivity extends AppCompatActivity {
                         if (fileName.contains(".ckpt") ||
                                 fileName.contains(".gguf") ||
                                 fileName.contains(".safetensors")) {
-                            if (fileName.contains("taesd")) {
-                                taesdModel = file.getAbsolutePath();
+                            if (fileName.contains("taesdxl")) {
+                                taesdXLModel = file.getAbsolutePath();
                             } else {
-                                if (fileName.contains("sdxl_vae")) {
-                                    vaeModel = file.getAbsolutePath();
+                                if (fileName.contains("taesd")) {
+                                    taesdModel = file.getAbsolutePath();
                                 } else if (fileName.contains("lora")) {
-                                    helperPath = file.getParent();      // for LoRA and VAE etc
+                                    helperPath = file.getParent();      // for LoRA and taesd etc
                                 } else {
                                     if (file.length() > (500 * 1024 * 1024)) {
                                         fileList.add(file.getAbsolutePath());
@@ -374,11 +380,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
             if (checked) {
-                if (compoundButton.getId() == R.id.vaechecker) {
+                if (compoundButton.getId() == R.id.taesdXLchecker) {
                     taesdchecker.setChecked(false);
                 } else {
                     if (compoundButton.getId() == R.id.taesdchecker) {
-                        vaechecker.setChecked(false);
+                        taesdXLchecker.setChecked(false);
                     }
                 }
             }
