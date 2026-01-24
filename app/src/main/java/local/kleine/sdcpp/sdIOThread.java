@@ -9,9 +9,9 @@ import java.io.InputStreamReader;
 
 class sdIOThread extends Thread implements Runnable {
     private static Process process;
-    private final MainActivity myActivity;
+    private final SDActivity myActivity;
 
-    sdIOThread(MainActivity parent, String[] arguments, String sdWorkPath) {
+    sdIOThread(SDActivity parent, String[] arguments, String sdWorkPath) {
         myActivity = parent;
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(arguments);

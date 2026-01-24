@@ -17,7 +17,7 @@
     <string name="field_lorapath">lora path</string>
     <string name="field_widthXheight">W x H:</string>
     <string name="default_height">512</string>
-    <string name="default_width">256</string>
+    <string name="default_width">512</string>
     <string name="field_cfgs">cfg:</string>
     <string name="default_cfg">7</string>
 </resources>
