@@ -192,8 +192,8 @@ public class SDActivity extends AppCompatActivity {
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
-                    "--diffusion-fa",
-                    "--vae-tiling",
+               //     "--diffusion-fa",
+               //     "--vae-tiling",
             };
             new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath).start();
         });
