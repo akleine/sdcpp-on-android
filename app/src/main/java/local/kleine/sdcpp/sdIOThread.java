@@ -38,8 +38,10 @@ class sdIOThread extends Thread implements Runnable {
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                final String outputLine = line;
-                myActivity.runOnUiThread(() -> myActivity.debugMsg(outputLine));
+                if (!line.isEmpty()) {
+                    final String outputLine = line;
+                    myActivity.runOnUiThread(() -> myActivity.debugMsg(outputLine));
+                }
             }
             int exitCode = process.waitFor();
             myActivity.runOnUiThread(() -> myActivity.subFinished(exitCode));
