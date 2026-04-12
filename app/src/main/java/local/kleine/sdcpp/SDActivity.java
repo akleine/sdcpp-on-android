@@ -192,8 +192,8 @@ public class SDActivity extends AppCompatActivity {
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
-               //     "--diffusion-fa",
-               //     "--vae-tiling",
+                    //     "--diffusion-fa",
+                    //     "--vae-tiling",
             };
             new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath).start();
         });
@@ -253,7 +253,7 @@ public class SDActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             boolean isProgressBar = msg.startsWith("  |");
             final String clearToEOL = "\u001B[K";
-            String text = msg + "\n";
+            String text = msg;
             if (lastProgressBar && !isProgressBar) {
                 outputArrayList.add("");                          // at log begin and at progress bar end
             }
@@ -263,7 +263,7 @@ public class SDActivity extends AppCompatActivity {
             int last = outputArrayList.size() - 1;
             outputArrayList.set(last, text);
             lastProgressBar = isProgressBar;
-            if (!isProgressBar && msg.length() > 1) {
+            if (!isProgressBar) {
                 outputArrayList.add("");                          // new line if no progress bar
             }
             arrayAdapter.notifyDataSetChanged();
