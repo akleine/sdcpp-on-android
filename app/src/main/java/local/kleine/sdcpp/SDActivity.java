@@ -116,6 +116,10 @@ public class SDActivity extends AppCompatActivity {
         outputArrayList = new ArrayList<>();
         arrayAdapter = new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.output_item_line, outputArrayList);
         sdLogView.setAdapter(arrayAdapter);
+
+        // outputArrayList.add("");
+        // outputArrayList.add("");
+
         imageOutputView = findViewById(R.id.outputImageView);
         promptEditor = findViewById(R.id.stringprompt);
         negativeEditor = findViewById(R.id.stringnegprompt);
@@ -192,8 +196,8 @@ public class SDActivity extends AppCompatActivity {
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
-                    //     "--diffusion-fa",
-                    //     "--vae-tiling",
+                    "--diffusion-fa",
+                    "--vae-tiling",
             };
             new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath).start();
         });
