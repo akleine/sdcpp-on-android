@@ -116,6 +116,10 @@ public class SDActivity extends AppCompatActivity {
         outputArrayList = new ArrayList<>();
         arrayAdapter = new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.output_item_line, outputArrayList);
         sdLogView.setAdapter(arrayAdapter);
+
+        // outputArrayList.add("");
+        // outputArrayList.add("");
+
         imageOutputView = findViewById(R.id.outputImageView);
         promptEditor = findViewById(R.id.stringprompt);
         negativeEditor = findViewById(R.id.stringnegprompt);
