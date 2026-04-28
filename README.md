@@ -19,7 +19,7 @@ Download these safetensors or ckpt files using your favorite web browser and sto
 The generated image files (PNG) are saved in 'Download' folder, called outputXXXXXXXXXX.png, 
 where XXXXXXXXXX is the Unix timestamp of when the generation started.
     
-### Example: Generate an SDXS image (the most **fast** option)
+### Example: Generate an SDXS image (within seconds)
 
 | Step 1: first enter some input:|
 | :----- |
@@ -34,6 +34,23 @@ where XXXXXXXXXX is the Unix timestamp of when the generation started.
 | Step 3: view your result:|
 | :----- |
 | ![](assets/step23.jpg) |
+ 
+
+### Another Example: Generate an SDXS image (needs much more time)
+
+| Step 1: first enter some input:|
+| :----- |
+| ![](assets/step31.jpg) |
+
+
+| Step 2: wait some seconds:|
+| :----- |
+| ![](assets/step32.jpg) |
+
+
+| Step 3: view your result:|
+| :----- |
+| ![](assets/step33.jpg) |
  
         
 ## Build Instructions: 

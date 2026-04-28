@@ -11,6 +11,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -53,8 +55,10 @@ public class SDActivity extends AppCompatActivity {
     private ArrayAdapter<String> arrayAdapter;
     private boolean lastProgressBar = true;               // helper for message log
     private final String[] samplerArr = {"euler", "euler_a", "heun", "dpm2", "dpm++2s_a", "dpm++2m",
-            "dpm++2mv2", "ipndm", "ipndm_v", "lcm", "ddim_trailing", "tcd"};
+            "dpm++2mv2", "ipndm", "ipndm_v", "lcm" /* LCM_POS 9 */, "ddim_trailing", "tcd"};
+    private static int LCM_POS = 9;
     private List<String> fileList, samplerList;
+    private boolean add_q4_option = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,12 +120,9 @@ public class SDActivity extends AppCompatActivity {
         outputArrayList = new ArrayList<>();
         arrayAdapter = new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.output_item_line, outputArrayList);
         sdLogView.setAdapter(arrayAdapter);
-
-        // outputArrayList.add("");
-        // outputArrayList.add("");
-
         imageOutputView = findViewById(R.id.outputImageView);
         promptEditor = findViewById(R.id.stringprompt);
+        promptEditor.addTextChangedListener(createTextWatcher());
         negativeEditor = findViewById(R.id.stringnegprompt);
         stepsEditor = findViewById(R.id.stringsteps);
         seedEditor = findViewById(R.id.stringseed);
@@ -196,9 +197,14 @@ public class SDActivity extends AppCompatActivity {
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
-                    "--diffusion-fa",
                     "--vae-tiling",
+                    "-v", "-v" // both are place holders only
             };
+            if (add_q4_option) {
+                int n = arguments.length;
+                arguments[n - 2] = "--type";
+                arguments[n - 1] = "q4_0";
+            }
             new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath).start();
         });
         Button closeButton = findViewById(R.id.closeButton);
@@ -378,13 +384,56 @@ public class SDActivity extends AppCompatActivity {
         }
     }
 
+    TextWatcher createTextWatcher() {
+        TextWatcher tw = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (editable.toString().contains("<lora:")) {
+                    // here some lazy checks:
+                    if (editable.toString().contains("LCM") || editable.toString().contains("Vega")) {
+                        Spinner spinner2 = findViewById(R.id.spinner2);
+                        spinner2.setSelection(LCM_POS);
+                    }
+                }
+            }
+        };
+        return tw;
+    }
+
     public class ItemSelectedListener implements AdapterView.OnItemSelectedListener {
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             if (parent.getId() == R.id.spinner1) {
                 selectedModelfile = fileList.get(position);
+                // here follow some lazy checks for easy defaults:
+                if (selectedModelfile.toUpperCase().contains("SDXS")) {
+                    stepsEditor.setText("1");
+                    cfgscaleEditor.setText("1");
+                }
+                if (selectedModelfile.toUpperCase().contains("SSD")) {
+                    add_q4_option = true; // an additional option for less RAM
+                }
+                if (selectedModelfile.toUpperCase().contains("SSD")
+                        || selectedModelfile.toUpperCase().contains("VEGA")
+                        || selectedModelfile.toUpperCase().contains("XL")) {
+                    if (!taesdXLModel.isEmpty()) {
+                        taesdXLchecker.setChecked(true);
+                    }
+                }
             } else {
                 selectedSampler = samplerList.get(position);
+                if (selectedSampler.contains("lcm")) {
+                    stepsEditor.setText("4");
+                    cfgscaleEditor.setText("1");
+                }
             }
         }
 

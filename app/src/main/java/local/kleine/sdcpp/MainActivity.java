@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
         am.getMemoryInfo(mi);
         long availMB = (long) mi.availMem / (1024 * 1024);
-        Toast.makeText(myActivity, "available Memory: "+ availMB + " MB", Toast.LENGTH_SHORT).show();
+        Toast.makeText(myActivity, "available Memory: "+ availMB + " MB", Toast.LENGTH_LONG).show();
         launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
