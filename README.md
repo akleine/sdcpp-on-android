@@ -36,14 +36,14 @@ where XXXXXXXXXX is the Unix timestamp of when the generation started.
 | ![](assets/step23.jpg) |
  
 
-### Another Example: Generate an SDXS image (needs much more time)
+### Example: an SDXL style image (via SSD1B, needs much more time)
 
 | Step 1: first enter some input:|
 | :----- |
 | ![](assets/step31.jpg) |
 
 
-| Step 2: wait some seconds:|
+| Step 2: wait some time:|
 | :----- |
 | ![](assets/step32.jpg) |
 

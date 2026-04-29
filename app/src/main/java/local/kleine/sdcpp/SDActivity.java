@@ -56,9 +56,8 @@ public class SDActivity extends AppCompatActivity {
     private boolean lastProgressBar = true;               // helper for message log
     private final String[] samplerArr = {"euler", "euler_a", "heun", "dpm2", "dpm++2s_a", "dpm++2m",
             "dpm++2mv2", "ipndm", "ipndm_v", "lcm" /* LCM_POS 9 */, "ddim_trailing", "tcd"};
-    private static int LCM_POS = 9;
+    private static final int LCM_POS = 9;
     private List<String> fileList, samplerList;
-    private boolean add_q4_option = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -200,11 +199,18 @@ public class SDActivity extends AppCompatActivity {
                     "--vae-tiling",
                     "-v", "-v" // both are place holders only
             };
-            if (add_q4_option) {
+            if (selectedModelfile.toUpperCase().contains("SSD")) {
                 int n = arguments.length;
                 arguments[n - 2] = "--type";
-                arguments[n - 1] = "q4_0";
+                arguments[n - 1] = "q8_0";
             }
+            // else {
+            // if (selectedModelfile.toUpperCase().contains("XL")) {
+            //    int n = arguments.length;
+            //    arguments[n - 2] = "--type";
+            //    arguments[n - 1] = "q4_0";
+            // }
+            // }
             new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath).start();
         });
         Button closeButton = findViewById(R.id.closeButton);
@@ -398,7 +404,7 @@ public class SDActivity extends AppCompatActivity {
             public void afterTextChanged(Editable editable) {
                 if (editable.toString().contains("<lora:")) {
                     // here some lazy checks:
-                    if (editable.toString().contains("LCM") || editable.toString().contains("Vega")) {
+                    if (editable.toString().toUpperCase().contains("LCM") || editable.toString().toUpperCase().contains("VEGA")) {
                         Spinner spinner2 = findViewById(R.id.spinner2);
                         spinner2.setSelection(LCM_POS);
                     }
@@ -417,15 +423,19 @@ public class SDActivity extends AppCompatActivity {
                 if (selectedModelfile.toUpperCase().contains("SDXS")) {
                     stepsEditor.setText("1");
                     cfgscaleEditor.setText("1");
-                }
-                if (selectedModelfile.toUpperCase().contains("SSD")) {
-                    add_q4_option = true; // an additional option for less RAM
-                }
-                if (selectedModelfile.toUpperCase().contains("SSD")
-                        || selectedModelfile.toUpperCase().contains("VEGA")
-                        || selectedModelfile.toUpperCase().contains("XL")) {
-                    if (!taesdXLModel.isEmpty()) {
-                        taesdXLchecker.setChecked(true);
+                    taesdXLchecker.setChecked(false);
+                    taesdchecker.setChecked(false);
+                } else {
+                    if (selectedModelfile.toUpperCase().contains("SSD")
+                            || selectedModelfile.toUpperCase().contains("VEGA")
+                            || selectedModelfile.toUpperCase().contains("XL")) {
+                        if (!taesdXLModel.isEmpty()) {
+                            taesdXLchecker.setChecked(true);
+                        }
+                    } else {
+                        if (!taesdModel.isEmpty()) {
+                            taesdchecker.setChecked(true);
+                        }
                     }
                 }
             } else {
