@@ -76,9 +76,9 @@ The binaries were built in Termux using the following commands:
 cmake .. -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE=/data/data/com.termux/files/home/android-ndk-r27b/build/cmake/android.toolchain.cmake \
   -DANDROID_PLATFORM=android-28 \
-  -DGGML_OPENMP=OFF \
-  -DSD_USE_NEW_GGML=ON -DSD_USE_WINOGRAD=ON \
   -DANDROID_ABI=arm64-v8a  # for 32 bit use: armeabi-v7a \
+  -DGGML_OPENMP=OFF \
+  -DSD_OPENCL=OFF
 
 ninja
 cd bin

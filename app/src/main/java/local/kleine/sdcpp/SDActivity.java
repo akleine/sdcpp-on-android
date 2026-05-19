@@ -189,6 +189,8 @@ public class SDActivity extends AppCompatActivity {
                     "-v",
                     "-o", outputImagePath,
                     "--lora-model-dir", helperPath,
+                    "--embd-dir", helperPath,
+                    "--mmap",
                     "--sampling-method", selectedSampler,
                     "--taesd", taesdoption,
                     "--cfg-scale", check(cfgscaleEditor.getText().toString(), "7.0"),
