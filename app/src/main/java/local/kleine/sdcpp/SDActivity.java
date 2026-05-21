@@ -48,7 +48,7 @@ public class SDActivity extends AppCompatActivity {
             getAbsolutePath();
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor;
-    private CheckBox taesdchecker, taesdXLchecker;
+    private CheckBox taesdchecker, taesdXLchecker, embeddchecker;
     private ListView sdLogView;
     private ImageView imageOutputView;
     private ArrayList<String> outputArrayList;
@@ -163,6 +163,8 @@ public class SDActivity extends AppCompatActivity {
         taesdXLchecker.setOnCheckedChangeListener(new onCheckedChangeListener());
         taesdchecker.setEnabled(!taesdModel.isEmpty());
         taesdXLchecker.setEnabled(!taesdXLModel.isEmpty());
+        embeddchecker = findViewById(R.id.embeddchecker);
+        embeddchecker.setEnabled(!helperPath.isEmpty());
         TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v ->
@@ -189,7 +191,7 @@ public class SDActivity extends AppCompatActivity {
                     "-v",
                     "-o", outputImagePath,
                     "--lora-model-dir", helperPath,
-                    "--embd-dir", helperPath,
+                    "--embd-dir", embeddchecker.isChecked() ? helperPath : "",
                     "--mmap",
                     "--sampling-method", selectedSampler,
                     "--taesd", taesdoption,

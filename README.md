@@ -68,7 +68,7 @@ This app requires extensive storage permissions to function. It needs to read ac
 
 ## Native code:
 
-**IMPORTANT**: this project contains compiled code forked from sd.cpp (stable-diffusion.cpp-JetsonNano), see here: https://github.com/akleine/stable-diffusion.cpp-JetsonNano/tree/96e43f9 .
+**IMPORTANT**: this project contains compiled code forked from sd.cpp (stable-diffusion.cpp-JetsonNano), see here: https://github.com/akleine/stable-diffusion.cpp-JetsonNano/tree/1143d31 .
 You are encouraged to build the sd executable yourself using Android NDK, see the sd.cpp build documentation:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md .
 The binaries were built in Termux using the following commands:
 
