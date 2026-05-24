@@ -32,7 +32,10 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -176,7 +179,7 @@ public class SDActivity extends AppCompatActivity {
                 prompt = "something";
             }
             String negative = negativeEditor.getText().toString();
-            outputImagePath = sdWorkPath + "/output" + System.currentTimeMillis() / 1000L + ".png";
+            outputImagePath = sdWorkPath + "/output" + System.currentTimeMillis() / 1000L;
             String taesdoption = "";
             if (taesdchecker.isChecked()) {
                 taesdoption = taesdModel;
@@ -184,6 +187,7 @@ public class SDActivity extends AppCompatActivity {
             if (taesdXLchecker.isChecked()) {
                 taesdoption = taesdXLModel;
             }
+
             String[] arguments = new String[]{sdProgramPath,
                     "-m", selectedModelfile,
                     "-n", negative,
@@ -207,14 +211,13 @@ public class SDActivity extends AppCompatActivity {
                 int n = arguments.length;
                 arguments[n - 2] = "--type";
                 arguments[n - 1] = "q8_0";
+            } else {
+                if (selectedModelfile.toUpperCase().contains("XL")) {
+                    int n = arguments.length;
+                    arguments[n - 2] = "--type";
+                    arguments[n - 1] = "q4_0";
+                }
             }
-            // else {
-            // if (selectedModelfile.toUpperCase().contains("XL")) {
-            //    int n = arguments.length;
-            //    arguments[n - 2] = "--type";
-            //    arguments[n - 1] = "q4_0";
-            // }
-            // }
             new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath).start();
         });
         Button closeButton = findViewById(R.id.closeButton);
@@ -246,10 +249,22 @@ public class SDActivity extends AppCompatActivity {
 
     public void subFinished(int exitcode) {
         runOnUiThread(() -> {
-            File file = new File(outputImagePath);
+            File file = new File(outputImagePath + ".png");
             if (exitcode == 0 && file.exists()) {
                 imageOutputView.setVisibility(View.VISIBLE);
+                StringBuilder sb = new StringBuilder();
+                for (String line : outputArrayList)
+                    sb.append(line).append("\n");
+                String alllog = sb.toString();
+                try {
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(outputImagePath + ".log.txt"));
+                    writer.write(alllog);
+                    writer.close();
+                } catch (IOException e) {
+                    Toast.makeText(myActivity, "Error writing logfile", Toast.LENGTH_SHORT).show();
+                }
                 displayResultImageFile(file);
+
             } else {
                 String errMsg;
                 if (exitcode == 0 && !file.exists()) {
@@ -268,6 +283,7 @@ public class SDActivity extends AppCompatActivity {
             }
         });
     }
+
 
     public void debugMsg(final String msg) {
         runOnUiThread(() -> {
@@ -395,7 +411,7 @@ public class SDActivity extends AppCompatActivity {
     }
 
     TextWatcher createTextWatcher() {
-        TextWatcher tw = new TextWatcher() {
+        return new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
             }
@@ -415,7 +431,6 @@ public class SDActivity extends AppCompatActivity {
                 }
             }
         };
-        return tw;
     }
 
     public class ItemSelectedListener implements AdapterView.OnItemSelectedListener {

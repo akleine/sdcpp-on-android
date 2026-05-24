@@ -1,3 +1,5 @@
+[**KEEP ANDROID OPEN**](https://keepandroidopen.org/en/ "Important information, read first")
+***
 # This is the sdcpp-on-android project
 
 ## Purpose:
@@ -16,8 +18,7 @@ Download these safetensors or ckpt files using your favorite web browser and sto
 * Grant permissions: Confirm the required storage permissions (see Security & Privacy Note below).
 
 * Generate an image in three steps
-The generated image files (PNG) are saved in 'Download' folder, called outputXXXXXXXXXX.png, 
-where XXXXXXXXXX is the Unix timestamp of when the generation started.
+The generated image files (PNG) are saved in 'Download' folder, called outputXXXXXXXXXX.png, where XXXXXXXXXX is the Unix timestamp of when the generation started. Also a log file is written, called outputXXXXXXXXXX.log.txt.
     
 ### Example: Generate an SDXS image (within seconds)
 
