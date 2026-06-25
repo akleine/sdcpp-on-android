@@ -12,6 +12,8 @@
     <string name="field_seed">seed:</string>
     <string name="default_minus1">-1</string>
     <string name="field_modelfile">select</string>
+    <string name="field_embedd">"embd</string>
+    <string name="field_cpu">"CPU</string>
     <string name="field_taesd">"use taesd</string>
     <string name="field_taesdXL">use taesdXL</string>
     <string name="field_lorapath">lora path</string>

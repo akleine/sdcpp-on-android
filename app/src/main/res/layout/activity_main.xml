@@ -75,11 +75,21 @@
                 android:id="@+id/spinner1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.9"
+                android:layout_weight="0.77"
                 android:background="@android:color/system_accent1_50"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 tools:ignore="ExtraText" />
+
+            <CheckBox
+                android:id="@+id/usecpu"
+                android:checked="false"
+                android:enabled="false"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.13"
+                android:text="@string/field_cpu"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
         </LinearLayout>
 
         <LinearLayout
@@ -91,7 +101,7 @@
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.25"
+                android:layout_weight="0.22"
                 android:text="@string/field_lorapath"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -99,9 +109,17 @@
                 android:id="@+id/lorapath"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.75"
+                android:layout_weight="0.65"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <CheckBox
+                android:id="@+id/embeddchecker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.13"
+                android:text="@string/field_embedd"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
         </LinearLayout>
@@ -116,7 +134,7 @@
                 android:id="@+id/taesdchecker"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.25"
+                android:layout_weight="0.22"
                 android:text="@string/field_taesd"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -124,7 +142,7 @@
                 android:id="@+id/taesdmodel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.75"
+                android:layout_weight="0.78"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
@@ -141,7 +159,7 @@
                 android:id="@+id/taesdXLchecker"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.25"
+                android:layout_weight="0.22"
                 android:text="@string/field_taesdXL"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -149,7 +167,7 @@
                 android:id="@+id/taesdXLmodel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.75"
+                android:layout_weight="0.78"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 android:textAppearance="?android:attr/textAppearanceMedium" />

@@ -6,15 +6,20 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Map;
 
 class sdIOThread extends Thread implements Runnable {
     private static Process process;
     private final SDActivity myActivity;
 
-    sdIOThread(SDActivity parent, String[] arguments, String sdWorkPath) {
+    sdIOThread(SDActivity parent, String[] arguments, String sdWorkPath, String sdLibraryPath ) {
         myActivity = parent;
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(arguments);
+            if (!sdLibraryPath.isEmpty()) {
+                Map<String, String> environment = processBuilder.environment();
+                environment.put("LD_LIBRARY_PATH", sdLibraryPath);
+            }
             processBuilder.directory(new File(sdWorkPath));
             processBuilder.redirectErrorStream(true);
             process = processBuilder.start();

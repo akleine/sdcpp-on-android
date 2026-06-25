@@ -44,14 +44,17 @@ import java.util.List;
 public class SDActivity extends AppCompatActivity {
     private Activity myActivity;
     private Process process;
-    private static final String sdFileName = "libsd.so"; // "sd" executable needs renaming because it is now located inside jniLibs
-    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, taesdXLModel, helperPath;
+    private String sdProgramPath, outputImagePath, selectedModelfile, selectedSampler, taesdModel, taesdXLModel, helperPath,
+            libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
+
+    private final static String SDlibopenCL = "libsdopenCL.so";
+    private final static String SDlib = "libsd.so";
     private final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
             getAbsolutePath();
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor;
-    private CheckBox taesdchecker, taesdXLchecker, embeddchecker;
+    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, cpuchecker;
     private ListView sdLogView;
     private ImageView imageOutputView;
     private ArrayList<String> outputArrayList;
@@ -61,6 +64,7 @@ public class SDActivity extends AppCompatActivity {
             "dpm++2mv2", "ipndm", "ipndm_v", "lcm" /* LCM_POS 9 */, "ddim_trailing", "tcd"};
     private static final int LCM_POS = 9;
     private List<String> fileList, samplerList;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +99,17 @@ public class SDActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     public void runSDcpp() {
+        boolean canUseOpenCL = false;
+        final File nativeLibDir = new File(getApplicationInfo().nativeLibraryDir);
+        final String[] libs = nativeLibDir.list();
+        if (libs != null) {
+            for (String lib : libs) {
+                if (lib.equals(SDlibopenCL)) {
+                    canUseOpenCL = true;
+                    break;
+                }
+            }
+        }
         OnBackPressedCallback callback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -109,15 +124,6 @@ public class SDActivity extends AppCompatActivity {
         }
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE); // needed for sd log output
         setContentView(R.layout.activity_main);
-        File file = new File(this.getApplicationInfo().nativeLibraryDir, sdFileName);
-        if (!(file.exists() && file.length() > 0)) {
-            Toast.makeText(this, "sd executable not found,\nplease rebuild this app", Toast.LENGTH_LONG).show();
-            Intent intent = new Intent(SDActivity.this, MainActivity.class);
-            intent.putExtra("result", "ERROR");
-            setResult(RESULT_CANCELED, intent);
-            finish();
-        }
-        sdProgramPath = file.getAbsolutePath();
         sdLogView = findViewById(R.id.sdLogView);
         outputArrayList = new ArrayList<>();
         arrayAdapter = new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.output_item_line, outputArrayList);
@@ -168,6 +174,9 @@ public class SDActivity extends AppCompatActivity {
         taesdXLchecker.setEnabled(!taesdXLModel.isEmpty());
         embeddchecker = findViewById(R.id.embeddchecker);
         embeddchecker.setEnabled(!helperPath.isEmpty());
+        cpuchecker = findViewById(R.id.usecpu);
+        cpuchecker.setChecked(!canUseOpenCL);
+        cpuchecker.setEnabled(canUseOpenCL);
         TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v ->
@@ -187,16 +196,13 @@ public class SDActivity extends AppCompatActivity {
             if (taesdXLchecker.isChecked()) {
                 taesdoption = taesdXLModel;
             }
-
-            String[] arguments = new String[]{sdProgramPath,
+            String[] arguments = new String[]{"",
                     "-m", selectedModelfile,
                     "-n", negative,
                     "-p", prompt,
-                    "-v",
                     "-o", outputImagePath,
                     "--lora-model-dir", helperPath,
                     "--embd-dir", embeddchecker.isChecked() ? helperPath : "",
-                    "--mmap",
                     "--sampling-method", selectedSampler,
                     "--taesd", taesdoption,
                     "--cfg-scale", check(cfgscaleEditor.getText().toString(), "7.0"),
@@ -205,20 +211,48 @@ public class SDActivity extends AppCompatActivity {
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
                     "--vae-tiling",
-                    "-v", "-v" // both are place holders only
+                    // "-v",  // currently not for openCL
+                    "--mmap",
+                    "--mmap",
+                    "--mmap",
+                    "--mmap",
+                    "--mmap" // some options are place holders only
             };
-            if (selectedModelfile.toUpperCase().contains("SSD")) {
-                int n = arguments.length;
-                arguments[n - 2] = "--type";
-                arguments[n - 1] = "q8_0";
-            } else {
-                if (selectedModelfile.toUpperCase().contains("XL")) {
-                    int n = arguments.length;
+            int n = arguments.length;
+            if (cpuchecker.isChecked()) {
+                sdFileName = SDlib;
+                libPath = "";
+                arguments[n - 3] = "-v";
+                // for some budget devices with low RAM and NO usable openCL drivers:
+                if (selectedModelfile.toUpperCase().contains("SSD")) {
                     arguments[n - 2] = "--type";
-                    arguments[n - 1] = "q4_0";
+                    arguments[n - 1] = "q8_0";
+                } else {
+                    if (selectedModelfile.toUpperCase().contains("XL")) {
+                        arguments[n - 2] = "--type";
+                        arguments[n - 1] = "q4_0";
+                    }
                 }
+            } else {
+                sdFileName = SDlibopenCL;
+                libPath = "/vendor/lib64";
+                // this settings seem to work quite well at openCL/ADRENO
+                arguments[n - 4] = "--diffusion-conv-direct";
+                arguments[n - 3] = "--vae-conv-direct";
+                arguments[n - 2] = "--type";
+                arguments[n - 1] = "f16";
             }
-            new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath).start();
+            File file = new File(this.getApplicationInfo().nativeLibraryDir, sdFileName);
+            if (!(file.exists() && file.length() > 0)) {
+                Toast.makeText(this, sdFileName + " not found,\nplease rebuild this app", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(SDActivity.this, MainActivity.class);
+                intent.putExtra("result", "ERROR");
+                setResult(RESULT_CANCELED, intent);
+                finish();
+            }
+            sdProgramPath = file.getAbsolutePath();
+            arguments[0] = sdProgramPath;
+            new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath).start();
         });
         Button closeButton = findViewById(R.id.closeButton);
         closeButton.setOnClickListener(v -> {
