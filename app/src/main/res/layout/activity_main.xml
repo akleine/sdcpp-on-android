@@ -19,10 +19,12 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/stringpromptmsg"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.1"
                 android:text="@string/field_prompt"
+                android:labelFor="@id/stringprompt"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <EditText
@@ -31,8 +33,10 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="0.9"
                 android:inputType="text"
+                android:labelFor="@id/stringpromptmsg"
                 android:singleLine="true"
-                android:text="@string/default_prompt" />
+                android:text="@string/default_prompt"
+                tools:ignore="Autofill,TouchTargetSizeCheck" />
         </LinearLayout>
 
         <LinearLayout
@@ -42,20 +46,24 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/stringnegpromptmsg"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.1"
                 android:text="@string/field_negative"
+                android:labelFor="@id/stringnegprompt"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <EditText
                 android:id="@+id/stringnegprompt"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.9"
                 android:inputType="text"
+                android:labelFor="@id/stringnegpromptmsg"
                 android:singleLine="true"
-                android:text="@string/default_negative" />
+                android:text="@string/default_negative"
+                tools:ignore="autofill,TouchTargetSizeCheck" />
         </LinearLayout>
 
         <LinearLayout
@@ -77,17 +85,18 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="0.77"
                 android:background="@android:color/system_accent1_50"
+                android:minHeight="48dp"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
-                tools:ignore="ExtraText" />
+                tools:ignore="ExtraText,TouchTargetSizeCheck" />
 
             <CheckBox
                 android:id="@+id/usecpu"
-                android:checked="false"
-                android:enabled="false"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.13"
+                android:checked="false"
+                android:enabled="false"
                 android:text="@string/field_cpu"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
         </LinearLayout>
@@ -191,13 +200,15 @@
                 android:id="@+id/stringsteps"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.05"
+                android:layout_weight="0.07"
                 android:gravity="center"
                 android:inputType="number"
                 android:singleLine="true"
-                android:text="@string/default_steps" />
+                android:text="@string/default_steps"
+                tools:ignore="autofill,TouchTargetSizeCheck" />
 
             <TextView
+                android:id="@+id/stringseedmsg"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.07"
@@ -209,16 +220,19 @@
                 android:id="@+id/stringseed"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.06"
+                android:layout_weight="0.07"
                 android:gravity="center"
                 android:inputType="numberSigned"
+                android:labelFor="@id/stringseedmsg"
                 android:singleLine="true"
-                android:text="@string/default_minus1" />
+                android:text="@string/default_minus1"
+                tools:ignore="autofill,TouchTargetSizeCheck" />
 
             <TextView
+                android:id="@+id/stringwxhmsg"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.08"
+                android:layout_weight="0.07"
                 android:text="@string/field_widthXheight"
                 android:textAlignment="gravity"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
@@ -227,23 +241,28 @@
                 android:id="@+id/stringwidth"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.08"
+                android:layout_weight="0.09"
                 android:gravity="center"
                 android:inputType="number"
+                android:labelFor="@id/stringwxhmsg"
                 android:singleLine="true"
-                android:text="@string/default_height" />
+                android:text="@string/default_height"
+                tools:ignore="autofill,TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
 
             <EditText
                 android:id="@+id/stringheight"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.08"
+                android:layout_weight="0.09"
                 android:gravity="center"
                 android:inputType="number"
+                android:labelFor="@id/stringwxhmsg"
                 android:singleLine="true"
-                android:text="@string/default_width" />
+                android:text="@string/default_height"
+                tools:ignore="autofill,TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
 
             <TextView
+                android:id="@+id/stringcfgmsg"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.05"
@@ -253,31 +272,33 @@
 
             <EditText
                 android:id="@+id/stringcfgscale"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.03"
+                android:layout_weight="0.07"
                 android:gravity="center"
-                android:inputType="number"
+                android:inputType="numberDecimal"
+                android:labelFor="@id/stringcfgmsg"
                 android:singleLine="true"
-                android:text="@string/default_cfg" />
+                android:text="@string/default_cfg"
+                tools:ignore="autofill,TouchTargetSizeCheck" />
 
             <Spinner
                 android:id="@+id/spinner2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.2"
+                android:layout_weight="0.11"
                 android:background="@android:color/system_accent1_50"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                tools:ignore="ExtraText" />
+                android:padding="6dp"
+                tools:ignore="TouchTargetSizeCheck" />
 
             <Button
                 android:id="@+id/submitButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
-                android:layout_weight="0.15"
-                android:text="@string/submit" />
+                android:layout_weight="0.18"
+                android:text="@string/submit"
+                tools:ignore="TouchTargetSizeCheck" />
         </LinearLayout>
 
 

@@ -64,7 +64,7 @@ public class SDActivity extends AppCompatActivity {
             "dpm++2mv2", "ipndm", "ipndm_v", "lcm" /* LCM_POS 9 */, "ddim_trailing", "tcd"};
     private static final int LCM_POS = 9;
     private List<String> fileList, samplerList;
-
+    private static String lastMsg = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -210,8 +210,7 @@ public class SDActivity extends AppCompatActivity {
                     "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     "--height", checkDimension(heightEditor.getText().toString(), "512"),
-                    "--vae-tiling",
-                    // "-v",  // currently not for openCL
+                    "-v",
                     "--mmap",
                     "--mmap",
                     "--mmap",
@@ -222,7 +221,7 @@ public class SDActivity extends AppCompatActivity {
             if (cpuchecker.isChecked()) {
                 sdFileName = SDlib;
                 libPath = "";
-                arguments[n - 3] = "-v";
+                arguments[n - 4] = "--vae-tiling";  // currently not for openCL
                 // for some budget devices with low RAM and NO usable openCL drivers:
                 if (selectedModelfile.toUpperCase().contains("SSD")) {
                     arguments[n - 2] = "--type";
@@ -236,7 +235,7 @@ public class SDActivity extends AppCompatActivity {
             } else {
                 sdFileName = SDlibopenCL;
                 libPath = "/vendor/lib64";
-                // this settings seem to work quite well at openCL/ADRENO
+                // this settings seem to work quite well at openCL/ADRENO 810
                 arguments[n - 4] = "--diffusion-conv-direct";
                 arguments[n - 3] = "--vae-conv-direct";
                 arguments[n - 2] = "--type";
@@ -331,13 +330,16 @@ public class SDActivity extends AppCompatActivity {
                 text = text.replace(clearToEOL, "");
             }
             int last = outputArrayList.size() - 1;
-            outputArrayList.set(last, text);
-            lastProgressBar = isProgressBar;
-            if (!isProgressBar) {
-                outputArrayList.add("");                          // new line if no progress bar
+            if (!lastMsg.equals(text)) {
+                outputArrayList.set(last, text);
+                lastProgressBar = isProgressBar;
+                if (!isProgressBar) {
+                    outputArrayList.add("");                          // new line if no progress bar
+                }
+                arrayAdapter.notifyDataSetChanged();
+                sdLogView.setSelection(last);
             }
-            arrayAdapter.notifyDataSetChanged();
-            sdLogView.setSelection(last);
+            lastMsg = text;
         });
     }
 
