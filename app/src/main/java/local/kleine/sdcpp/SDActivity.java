@@ -215,6 +215,8 @@ public class SDActivity extends AppCompatActivity {
                     "--mmap",
                     "--mmap",
                     "--mmap",
+                    "--mmap",
+                    "--mmap",
                     "--mmap" // some options are place holders only
             };
             int n = arguments.length;
@@ -230,6 +232,15 @@ public class SDActivity extends AppCompatActivity {
                     if (selectedModelfile.toUpperCase().contains("XL")) {
                         arguments[n - 2] = "--type";
                         arguments[n - 1] = "q4_0";
+                    } else {
+                        if (selectedModelfile.toUpperCase().contains("NITRO")) {
+                            arguments[n - 2] = "--type";
+                            arguments[n - 1] = "q4_0";
+                            arguments[n - 4] = "--scheduler";
+                            arguments[n - 3] = "sgm_uniform";
+                            arguments[n - 6] = "--timestep-shift";
+                            arguments[n - 5] = "250";
+                        }
                     }
                 }
             } else {

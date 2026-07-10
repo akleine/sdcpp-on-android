@@ -109,3 +109,11 @@ strip sd-cli
 ```
 
 After compiling rename the executable from 'sd-cli' to 'libsdopenCL.so' and place it near to 'libsd.so' . During execution, this app searches for a file named 'libsdopenCL.so' and suggest using it.
+Note: libOpenCL.so is not included here. Please compile it yourself, for example try: https://github.com/leejet/stable-diffusion.cpp/commit/d73b419
+
+## Issues:
+
+The openCL binary currently runs with an extra argment: ``` --type f16 ```. This is needed because during compile you get a message like:
+```
+warning: TODO: implement BF16, Q4_0, Q4_1, Q5_0, Q5_1, Q8_0, IQ4_NL support (https://github.com/ggml-org/llama.cpp/pull/14661) [-W#pragma-messages]
+```
