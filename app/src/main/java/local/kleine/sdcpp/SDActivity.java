@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+
 public class SDActivity extends AppCompatActivity {
     private Activity myActivity;
     private Process process;
@@ -198,8 +199,8 @@ public class SDActivity extends AppCompatActivity {
             }
             String[] arguments = new String[]{"",
                     "-m", selectedModelfile,
-                    "-n", negative,
                     "-p", prompt,
+                    "-n", negative,
                     "-o", outputImagePath,
                     "--lora-model-dir", helperPath,
                     "--embd-dir", embeddchecker.isChecked() ? helperPath : "",
@@ -230,8 +231,10 @@ public class SDActivity extends AppCompatActivity {
                     arguments[n - 1] = "q8_0";
                 } else {
                     if (selectedModelfile.toUpperCase().contains("XL")) {
-                        arguments[n - 2] = "--type";
-                        arguments[n - 1] = "q4_0";
+                        if (!selectedModelfile.toUpperCase().contains("GGUF")) {
+                            arguments[n - 2] = "--type";
+                            arguments[n - 1] = "q8_0"; //"q4_0";
+                        } // else keep as GGUF is
                     } else {
                         if (selectedModelfile.toUpperCase().contains("NITRO")) {
                             arguments[n - 2] = "--type";
@@ -250,7 +253,9 @@ public class SDActivity extends AppCompatActivity {
                 arguments[n - 4] = "--diffusion-conv-direct";
                 arguments[n - 3] = "--vae-conv-direct";
                 arguments[n - 2] = "--type";
-                arguments[n - 1] = "f16";
+                arguments[n - 1] = "q4_0";  // "f16";    (optimal for huge VRAM)
+                arguments[n - 6] = "-t";    // for q4_0  (less VRAM)
+                arguments[n - 5] = "1";     // for q4_0  (less VRAM)
             }
             File file = new File(this.getApplicationInfo().nativeLibraryDir, sdFileName);
             if (!(file.exists() && file.length() > 0)) {
@@ -262,6 +267,28 @@ public class SDActivity extends AppCompatActivity {
             }
             sdProgramPath = file.getAbsolutePath();
             arguments[0] = sdProgramPath;
+
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outputImagePath + ".sh"));
+                String[] args = arguments.clone();
+                if (libPath.isEmpty())  {
+                    args[0] = "sd \\\n";
+                } else {
+                    args[0]= "LD_LIBRARY_PATH=/vendor/lib64 sd \\\n";
+                }
+                args[4] = "\"" + args[4] + "\" \\\n";
+                args[6] = "\"" + args[6] + "\" \\\n";
+                args[8] = "output.png \\\n";
+                if (args[10].isEmpty()) args[ 9]="";  // lora-model-dir
+                if (args[12].isEmpty()) args[11]="";  // emb-dir
+                if (args[16].isEmpty()) args[15]="";  // taesd path
+                String cmdline = String.join(" ", args);
+                writer.write(cmdline);
+                writer.close();
+            } catch (IOException e) {
+                Toast.makeText(myActivity, "Error writing cmdfile", Toast.LENGTH_SHORT).show();
+            }
+
             new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath).start();
         });
         Button closeButton = findViewById(R.id.closeButton);

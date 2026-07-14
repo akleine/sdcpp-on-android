@@ -1,6 +1,8 @@
-## [**KEEP ANDROID OPEN**](https://keepandroidopen.org/en/ "Important information, read first")
+### _Before you read on, please note:_
 
+_Starting September 2026, a silent update, nonconsensually pushed by Google, will block every Android app whose developer hasn't registered with Google, signed their contract, paid up, and handed over government ID. More details here:  [**KEEP ANDROID OPEN**](https://keepandroidopen.org/en/)_
 ***
+
 # This is the sdcpp-on-android project
 
 ## Purpose:
@@ -67,10 +69,9 @@ MIT, the same license as sd.cpp.
 
 This app requires extensive storage permissions to function. It needs to read access to load the model files you provide and write access to save the generated images. We value your privacy and no data is collected or transmitted by this app. You can verify this by reviewing the source code.
 
-
 ## Native code:
 
-**IMPORTANT**: this project contains compiled code forked from sd.cpp (stable-diffusion.cpp-JetsonNano), see here: https://github.com/akleine/stable-diffusion.cpp-JetsonNano/tree/1626d04 .
+**IMPORTANT**: this project contains compiled code forked from sd.cpp (```stable-diffusion.cpp-JetsonNano```), see here: https://github.com/akleine/stable-diffusion.cpp-JetsonNano/commit/979d9b7 .
 You are encouraged to build the sd executable yourself using Android NDK, see the sd.cpp build documentation:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md .
 The binaries were built in Termux using the following commands:
 
@@ -88,7 +89,6 @@ strip sd
 ```
 
 After compiling rename the executables from 'sd' or 'sd-cli' to 'libsd.so' and place it in ```app/src/main/jniLibs/arm64-v8a```  respectively  ```app/src/main/jniLibs/armeabi-v7a```  folder. (This renaming is needed due android restrictions.)
-
 
 ## Optional use of an openCL driver:
 
@@ -110,10 +110,3 @@ strip sd-cli
 
 After compiling rename the executable from 'sd-cli' to 'libsdopenCL.so' and place it near to 'libsd.so' . During execution, this app searches for a file named 'libsdopenCL.so' and suggest using it.
 Note: libOpenCL.so is not included here. Please compile it yourself, for example try: https://github.com/leejet/stable-diffusion.cpp/commit/d73b419
-
-## Issues:
-
-The openCL binary currently runs with an extra argment: ``` --type f16 ```. This is needed because during compile you get a message like:
-```
-warning: TODO: implement BF16, Q4_0, Q4_1, Q5_0, Q5_1, Q8_0, IQ4_NL support (https://github.com/ggml-org/llama.cpp/pull/14661) [-W#pragma-messages]
-```
