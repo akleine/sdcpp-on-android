@@ -35,14 +35,11 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -54,21 +51,12 @@ import java.util.List;
 
 public class SDActivity extends AppCompatActivity {
 
-    public static final int EXIT_CODE_CANCELED    = 997;
-    // notification in subFinished()
-    public static final int EXIT_CODE_CAN_NOT_RUN  = 998;
-    // notification in subFinished(), exit and remove task
-    public static final int EXIT_CODE_EXCEPTION    = 999;
-    // notification in subFinished(), do not exit
     public static final int EXIT_CODE_NOT_FOUND    = 1000;
-    // notification in MainActivity, exit
     public static final int EXIT_CODE_DO_RESTART   = 1001;
 
     private static volatile String outputImagePath = "";
-    private static volatile ArrayList<String> outputArrayList;
+    private static volatile ArrayList<String> outputArrayList = null;
     private static sdIOThread sd_thread = null;
-
-    public  String exceptionDescription = "";
     private Activity myActivity;
     private String sdProgramPath, selectedModelfile, selectedSampler, selectedScheduler, taesdModel, taesdXLModel, helperPath,
             libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
@@ -210,7 +198,7 @@ public class SDActivity extends AppCompatActivity {
                         && PackageManager.PERMISSION_GRANTED == checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
-    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+    final ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (haveNewPermissions() || haveOldPermissions()) {
@@ -228,7 +216,7 @@ public class SDActivity extends AppCompatActivity {
                 if (/*  Build.VERSION.SDK_INT < Build.VERSION_CODES.M || //*/
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
                                 (Boolean.TRUE.equals(permissions.get(Manifest.permission.READ_EXTERNAL_STORAGE)) &&
-                                        Boolean.TRUE.equals(permissions.get(Manifest.permission.WRITE_EXTERNAL_STORAGE)))) {
+                                 Boolean.TRUE.equals(permissions.get(Manifest.permission.WRITE_EXTERNAL_STORAGE)))) {
                     runSDcpp();
                 } else {
                     setResult(EXIT_CODE_DO_RESTART);  // restart
@@ -240,21 +228,21 @@ public class SDActivity extends AppCompatActivity {
     {
         @Override
         public void onClick(View v) {
-            Window viewWindow = myActivity.getWindow();
             View coverView = myActivity.findViewById(R.id.coverView);
             coverView.setOnTouchListener(null);
             coverView.setVisibility(View.GONE);
-            WindowManager.LayoutParams lp = viewWindow.getAttributes();
-            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
-            viewWindow.setAttributes(lp);
-
-            sd_thread.processDestroy();
+            restoreScreenBrightness();
+            if (sd_thread != null) {
+                sd_thread.processDestroy();
+                sd_thread.updateActivity(null);
+            }
             sd_thread = null;
-
-            outputArrayList.clear();
+            if (outputArrayList != null) {
+                outputArrayList.clear();
+            }
             outputArrayList = null;
             outputImagePath = "";
-
+            lastMsg = "";
             Intent intent = new Intent(SDActivity.this, MainActivity.class);
             intent.putExtra("result", "ready");
             setResult(RESULT_OK, intent);  // do not restart, notification will be in subFinished()
@@ -265,16 +253,6 @@ public class SDActivity extends AppCompatActivity {
     private void setupWindow() {
         // setup, common for settings and log/result views
         // needs initialized outputArrayList
-        /*
-        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                setResult(RESULT_OK);
-                finish();
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, callback);
-        //*/
         androidx.appcompat.app.ActionBar ab = getSupportActionBar();
         if (ab != null) {
             ab.hide();                                                      // request all visible space available
@@ -295,11 +273,11 @@ public class SDActivity extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     public void runSDcpp() {
         if (sd_thread != null) {
-            // SD.cpp is launched, connecting to its console
+            // SD.cpp is launched or was finished, displaying the log
             setupWindow();
             findViewById(R.id.wrapperView).setVisibility(View.GONE);
             addScreenDimmer();
-            if (sdIOThread.process != null) lockScreenOn();
+            if (sdIOThread.process != null) lockScreenOn();  // still running, prevent sleeping
             findViewById(R.id.closeButton).setOnClickListener(cancelGenerationListener);
             sd_thread.updateActivity((SDActivity) myActivity);
             return;
@@ -408,6 +386,7 @@ public class SDActivity extends AppCompatActivity {
 /* 23 24 */         "--width", checkDimension(widthEditor.getText().toString(), "512"),
 /* 25 26 */         "--height", checkDimension(heightEditor.getText().toString(), "512"),
 /* 27 28 */         "--scheduler", selectedScheduler,
+/* 27 28 */         //"--schedule", selectedScheduler,
 /* 29 */            "-v"
                     // "--mmap"  // --params-backend seems to work better
             ));
@@ -448,12 +427,13 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("-t");    // for q4_0  (less VRAM)
                 arguments.add("1");     // for q4_0  (less VRAM)
             }
-            File file = new File(this.getApplicationInfo().nativeLibraryDir, sdFileName);
-            if (!(file.exists() && file.length() > 0)) {
+            File file = new File(nativeLibDir, sdFileName);
+            if ((file.exists() && file.length() > 0)) {
                 Intent intent = new Intent(SDActivity.this, MainActivity.class);
                 intent.putExtra("result", sdFileName);
                 setResult(EXIT_CODE_NOT_FOUND, intent);
                 finish();
+                return;
             }
             sdProgramPath = file.getAbsolutePath();
             arguments.set(0, sdProgramPath);
@@ -486,23 +466,22 @@ public class SDActivity extends AppCompatActivity {
                         + "\" \\\n";  // negative prompt
                 args[8] = "output.jpg \\\n";
                 args[10] = "\"" + args[10] + "\"";
-                //if (args[10].isEmpty()) args[ 9]="";  // lora-model-dir
                 args[12] = "\"" + args[12] + "\"";
-                //if (args[12].isEmpty()) args[11]="";  // emb-dir
                 args[16] = "\"" + args[16] + "\"";
-                //if (args[16].isEmpty()) args[15]="";  // taesd path
                 String cmdline = String.join(" ", args);
                 writer.write(cmdline);
                 writer.close();
             } catch (IOException e) {
                 Toast.makeText(myActivity, "Error writing cmdfile", Toast.LENGTH_SHORT).show();
             }
-            if (sd_thread == null) {
-                sd_thread = new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath);
-                sd_thread.start();
-            } else {
-                sd_thread.updateActivity((SDActivity) myActivity);
+            if (sd_thread != null) {
+                try {
+                    sd_thread.processDestroy();
+                    sd_thread.interrupt();
+                } catch (Exception ignored) {}
             }
+            sd_thread = new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath);
+            sd_thread.start();
         });
 
         TextView spm = findViewById(R.id.stringpromptmsg);
@@ -536,7 +515,7 @@ public class SDActivity extends AppCompatActivity {
         imageOutputView.setImageBitmap(myBitmap);
     }
 
-    public void subFinished(int exitcode) {
+    public void subFinished(int exitcode, final String msg) {
         runOnUiThread(() -> {
             File file = new File(outputImagePath);
             if (exitcode == 0 && file.exists()) {
@@ -555,15 +534,9 @@ public class SDActivity extends AppCompatActivity {
                 displayResultImageFile(file);
 
             } else {
-                String errMsg;
-                if (exitcode == 0 && !file.exists()) {
-                    errMsg = "Result image not found";
-                } else switch (exitcode) {
-                    case EXIT_CODE_CANCELED:   errMsg = "cancelled"; break;
-                    case EXIT_CODE_CAN_NOT_RUN: errMsg = "could not run SD process:\n" + exceptionDescription; break;
-                    case EXIT_CODE_EXCEPTION:   errMsg = "Exception during SD execution:\n" + exceptionDescription; break;
-                    default:  errMsg = "SD process failed with code: " + exitcode;
-                }
+                String errMsg = !msg.isEmpty() ? msg
+                        : (exitcode == 0 && !file.exists()) ? "Result image not found"
+                        : "SD process failed with code: " + exitcode;
                 Toast.makeText(myActivity, errMsg, Toast.LENGTH_SHORT).show();
             }
         });
@@ -776,7 +749,7 @@ public class SDActivity extends AppCompatActivity {
                                 } else if (fileName.contains("lora")) {
                                     helperPath = file.getParent();      // for LoRA and taesd etc
                                 } else {
-                                    if (file.length() > (500 * 1024 * 1024)) {
+                                    if (file.length() > (50 * 1024 * 1024)) {
                                         fileList.add(file.getAbsolutePath());
                                     }
                                 }
