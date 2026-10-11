@@ -1,8 +1,5 @@
 package local.kleine.sdcpp;
 
-import android.app.Activity;
-import android.widget.Toast;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -26,15 +23,17 @@ class sdIOThread extends Thread implements Runnable {
             process = processBuilder.start();
             myActivity.processInfo("sd.cpp started");
         } catch (Exception e) {
-            myActivity.exceptionDescription = e.getMessage();
-            myActivity.subFinished(SDActivity.EXIT_CODE_CAN_NOT_RUN);
-            myActivity.setResult(Activity.RESULT_OK);  // do not restart, notification will be in subFinished()
-            myActivity.finishAndRemoveTask();
+            processDestroy();
+            String msg = myActivity.getString(R.string.can_not_run_sd_process) + e.getMessage();
+            myActivity.addScreenDimmer();
+            myActivity.subFinished(0, msg);
+            myActivity.debugMsg(msg);
+            myActivity.restoreScreenBrightness();
         }
     }
 
-    public void updateActivity(SDActivity a) {
-        myActivity = a;
+    public void updateActivity(SDActivity activity) {
+        myActivity = activity;
     }
 
     public void processDestroy() {
@@ -50,29 +49,30 @@ class sdIOThread extends Thread implements Runnable {
 
     @Override
     public void run() {
-        myActivity.addScreenDimmer();
-        myActivity.lockScreenOn();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))){
-            String line;
-            while (process != null && (line = reader.readLine()) != null) {
-                if (!line.isEmpty()) {
-                    myActivity.debugMsg(line);
+        if (process != null) {
+            myActivity.addScreenDimmer();
+            myActivity.lockScreenOn();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while (process != null && (line = reader.readLine()) != null) {
+                    if (!line.isEmpty()) {
+                        myActivity.debugMsg(line);
+                    }
                 }
+                if (process != null) {
+                    myActivity.subFinished(process.waitFor(), "");
+                } else {
+                    myActivity.subFinished(0, "cancelled");
+                }
+            } catch (java.io.IOException e) {
+                myActivity.subFinished(0, "cancelled");
+            } catch (Exception e) {
+                myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
+            } finally {
+                processDestroy();
+                myActivity.restoreScreenBrightness();
             }
-            int exitCode = (process == null) ? SDActivity.EXIT_CODE_CANCELED : process.waitFor();
-            myActivity.subFinished(exitCode);
-        } catch (java.io.IOException e) {
-            myActivity.subFinished(SDActivity.EXIT_CODE_CANCELED);
-        } catch (Exception e) {
-            SDActivity a = myActivity;  // instead of synchronized()
-            a.exceptionDescription = e.getMessage();
-            a.subFinished(SDActivity.EXIT_CODE_EXCEPTION);
-        } finally {
-            processDestroy();
-            myActivity.restoreScreenBrightness();
         }
-
-        // not finishing the activity to view results or error log
     }
 }
 
