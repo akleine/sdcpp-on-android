@@ -51,7 +51,6 @@ import java.util.List;
 
 public class SDActivity extends AppCompatActivity {
 
-    public static final int EXIT_CODE_NOT_FOUND    = 1000;
     public static final int EXIT_CODE_DO_RESTART   = 1001;
 
     private static volatile String outputImagePath = "";
@@ -204,7 +203,7 @@ public class SDActivity extends AppCompatActivity {
                 if (haveNewPermissions() || haveOldPermissions()) {
                     runSDcpp();
                 } else {
-                    setResult(EXIT_CODE_DO_RESTART);  // restart
+                    setResult(EXIT_CODE_DO_RESTART);
                     finish();
                 }
             });
@@ -219,7 +218,7 @@ public class SDActivity extends AppCompatActivity {
                                  Boolean.TRUE.equals(permissions.get(Manifest.permission.WRITE_EXTERNAL_STORAGE)))) {
                     runSDcpp();
                 } else {
-                    setResult(EXIT_CODE_DO_RESTART);  // restart
+                    setResult(EXIT_CODE_DO_RESTART);
                     finish();
                 }
             });
@@ -428,10 +427,9 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("1");     // for q4_0  (less VRAM)
             }
             File file = new File(nativeLibDir, sdFileName);
-            if ((file.exists() && file.length() > 0)) {
-                Intent intent = new Intent(SDActivity.this, MainActivity.class);
-                intent.putExtra("result", sdFileName);
-                setResult(EXIT_CODE_NOT_FOUND, intent);
+            if (!(file.exists() && file.length() > 0)) {
+                Toast.makeText(myActivity, sdFileName + " not found,\nplease rebuild this app", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_CANCELED);
                 finish();
                 return;
             }
@@ -477,7 +475,6 @@ public class SDActivity extends AppCompatActivity {
             if (sd_thread != null) {
                 try {
                     sd_thread.processDestroy();
-                    sd_thread.interrupt();
                 } catch (Exception ignored) {}
             }
             sd_thread = new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath);
@@ -749,7 +746,7 @@ public class SDActivity extends AppCompatActivity {
                                 } else if (fileName.contains("lora")) {
                                     helperPath = file.getParent();      // for LoRA and taesd etc
                                 } else {
-                                    if (file.length() > (50 * 1024 * 1024)) {
+                                    if (file.length() > (500 * 1024 * 1024)) {
                                         fileList.add(file.getAbsolutePath());
                                     }
                                 }
@@ -769,11 +766,9 @@ public class SDActivity extends AppCompatActivity {
     }
     //*/
 
-    void processInfo(String info) {
-        Process process = sdIOThread.process;
-        if (process != null) {
-            Toast.makeText(myActivity, info + "\n" + process, Toast.LENGTH_SHORT).show();
-        }
+    final public void processInfo(String info) {
+        final Process process = sdIOThread.process;
+        if (process != null) runOnUiThread(() -> Toast.makeText(myActivity, info + "\n" + process, Toast.LENGTH_SHORT).show());
     }
 
     TextWatcher createTextWatcher() {
