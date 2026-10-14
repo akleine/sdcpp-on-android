@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">SD.cpp</string>
     <string name="request_permission">Request MANAGE_EXTERNAL_STORAGE Permission</string>
+    <string name="request_write">Request WRITE_EXTERNAL_STORAGE Permission</string>
     <string name="submit">submit</string>
     <string name="close">X</string>
     <string name="field_prompt">prompt:</string>
@@ -25,5 +26,7 @@
     <string name="sampler">sampler:</string>
     <string name="scheduler">scheduler:</string>
     <string name="field_options">additional options:</string>
-    <string name="options" translatable="false">--params-backend disk --fa</string>
+    <string name="options" translatable="false">--fa</string>
+    <string name="application_settings">Write permissions were rejected, please grant them in application settings</string>
+    <string name="can_not_run_sd_process">"can not run SD process: "</string>
 </resources>
