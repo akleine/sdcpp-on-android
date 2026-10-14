@@ -422,7 +422,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:autoSizeTextType="uniform"
-            android:text="@string/close" />
+            android:text="@string/close"
+            tools:ignore="UnusedAttribute" />
 
         <View
             android:id="@+id/coverView"
