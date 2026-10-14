@@ -26,25 +26,14 @@ public class MainActivity extends AppCompatActivity {
         launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-//                    Toast.makeText(mainActivity, "result: " + result.getResultCode(), Toast.LENGTH_SHORT).show();
                     switch (result.getResultCode()) {
                         case RESULT_OK:
                         case RESULT_CANCELED:
-                            ready = true;  // don't notify, don't restart
-//                            finish();
-                            break;
-                        case SDActivity.EXIT_CODE_NOT_FOUND:
-                            Intent data = result.getData();
-                            Toast.makeText(mainActivity,
-                                    (data == null ? "SD.cpp executable" :
-                                    data.getStringExtra("result"))
-                                            + " not found,\nplease rebuild this app", Toast.LENGTH_SHORT).show();
-                            ready = true;  // do not restart
-//                            finish();
+                            // don't restart
+                            ready = true;
                             break;
                         case SDActivity.EXIT_CODE_DO_RESTART:
                             ready = false;
-//                            finish();
                             break;
                         default:
                             Toast.makeText(mainActivity, "ERROR: process killed, not enough memory", Toast.LENGTH_SHORT).show();
