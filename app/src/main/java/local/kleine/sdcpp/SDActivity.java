@@ -481,16 +481,6 @@ public class SDActivity extends AppCompatActivity {
             sd_thread.start();
         });
 
-        TextView spm = findViewById(R.id.stringpromptmsg);
-        spm.setOnLongClickListener(v -> {
-            AppCompatDelegate.setDefaultNightMode(
-                    (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) ?
-                    AppCompatDelegate.MODE_NIGHT_NO :
-                            AppCompatDelegate.MODE_NIGHT_YES
-            );
-            return false;
-        });
-
         Button closeButton = findViewById(R.id.closeButton);
         closeButton.setOnClickListener(cancelGenerationListener);
     }
