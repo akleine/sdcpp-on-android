@@ -1,18 +1,16 @@
 package local.kleine.sdcpp;
 
-import android.app.Activity;
-
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
 
 class sdIOThread extends Thread implements Runnable {
-    private static Process process;
-    private final SDActivity myActivity;
+    public static volatile Process process = null;
+    private volatile SDActivity myActivity;
 
-    sdIOThread(SDActivity parent, String[] arguments, String sdWorkPath, String sdLibraryPath ) {
+    sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath ) {
         myActivity = parent;
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(arguments);
@@ -23,37 +21,61 @@ class sdIOThread extends Thread implements Runnable {
             processBuilder.directory(new File(sdWorkPath));
             processBuilder.redirectErrorStream(true);
             process = processBuilder.start();
-            myActivity.processInfo(process, "sd.cpp started");
+            myActivity.processInfo("sd.cpp started");
         } catch (Exception e) {
-            myActivity.subFinished(998);
-            myActivity.setResult(Activity.RESULT_CANCELED);
-            myActivity.finishAndRemoveTask();
+            processDestroy();
+            String msg = myActivity.getString(R.string.can_not_run_sd_process) + e.getMessage();
+            myActivity.addScreenDimmer();
+            myActivity.subFinished(0, msg);
+            myActivity.debugMsg(msg);
+            myActivity.restoreScreenBrightness();
         }
     }
 
-    protected static void processDestroy() {
+    public void updateActivity(SDActivity activity) {
+        myActivity = activity;
+    }
+
+    public void processDestroy() {
         if (process != null) {
-            process.destroy();                                      // avoid resource leaks
+            try {
+                process.destroy();
+                myActivity.processInfo("sd.cpp aborted");
+            } catch (Exception ignored) {
+            } finally {
+                process = null;
+            }
         }
     }
 
     @Override
     public void run() {
-        try (InputStream inputStream = process.getInputStream();
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.isEmpty()) {
-                    final String outputLine = line;
-                    myActivity.runOnUiThread(() -> myActivity.debugMsg(outputLine));
+        if (process != null) {
+            myActivity.addScreenDimmer();
+            myActivity.lockScreenOn();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while (process != null && (line = reader.readLine()) != null) {
+                    if (!line.isEmpty()) {
+                        myActivity.debugMsg(line);
+                    }
                 }
+                if (process != null) {
+                    myActivity.subFinished(process.waitFor(), "");
+                } else {
+                    myActivity.subFinished(0, "cancelled");
+                }
+            } catch (java.io.IOException e) {
+                myActivity.subFinished(0, "cancelled");
+            } catch (Exception e) {
+                myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
+            } finally {
+                try {
+                    sleep(250);                 // to not display "destroyed" twice
+                } catch (Exception ignored) {}  // if process was already cancelled
+                processDestroy();
+                myActivity.restoreScreenBrightness();
             }
-            int exitCode = process.waitFor();
-            myActivity.runOnUiThread(() -> myActivity.subFinished(exitCode));
-        } catch (Exception e) {
-            myActivity.runOnUiThread(() -> myActivity.subFinished(999));
-        } finally {
-            processDestroy();
         }
     }
 }

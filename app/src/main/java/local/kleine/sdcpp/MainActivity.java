@@ -1,6 +1,5 @@
 package local.kleine.sdcpp;
 
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,28 +10,33 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
 public class MainActivity extends AppCompatActivity {
-    private Activity myActivity;
+    private MainActivity mainActivity;
     private ActivityResultLauncher<Intent> launcher;
     private boolean ready = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        myActivity = this;
+        mainActivity = this;
         ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
         am.getMemoryInfo(mi);
-        long availMB = (long) mi.availMem / (1024 * 1024);
-        Toast.makeText(myActivity, "available Memory: " + availMB + " MB", Toast.LENGTH_LONG).show();
+        long availMB = mi.availMem / (1024 * 1024);
+        Toast.makeText(mainActivity, "available Memory: " + availMB + " MB", Toast.LENGTH_LONG).show();
         launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == RESULT_OK) {
-                        // Toast.makeText(myActivity, result.getData().getStringExtra("result"), Toast.LENGTH_SHORT).show();
-                        myActivity.finish();
-                        ready = true;
-                    } else {
-                        Toast.makeText(myActivity, "ERROR: process killed, not enough memory", Toast.LENGTH_SHORT).show();
+                    switch (result.getResultCode()) {
+                        case RESULT_OK:
+                        case RESULT_CANCELED:
+                            // don't restart
+                            ready = true;
+                            break;
+                        case SDActivity.EXIT_CODE_DO_RESTART:
+                            ready = false;
+                            break;
+                        default:
+                            Toast.makeText(mainActivity, "ERROR: process killed, not enough memory", Toast.LENGTH_SHORT).show();
                     }
                 }
         );
@@ -45,8 +49,7 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this, SDActivity.class);
             launcher.launch(intent);
         } else {
-            myActivity.finish();
+            mainActivity.finish();
         }
     }
-
 }

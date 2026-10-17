@@ -5,305 +5,394 @@
     android:layout_height="fill_parent"
     android:orientation="horizontal">
 
-    <LinearLayout
-        android:id="@+id/wrapperLinearLayout"
+    <ScrollView
+        android:id="@+id/wrapperView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         android:padding="6dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/stringpromptmsg"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:text="@string/field_prompt"
-                android:labelFor="@id/stringprompt"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+                android:layout_marginBottom="0dp"
+                android:orientation="vertical">
 
-            <EditText
-                android:id="@+id/stringprompt"
-                android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/stringpromptmsg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/field_prompt"
+                    android:labelFor="@id/stringprompt"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <EditText
+                    android:id="@+id/stringprompt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:labelFor="@id/stringpromptmsg"
+                    android:singleLine="false"
+                    android:text="@string/default_prompt"
+                    tools:ignore="Autofill,TouchTargetSizeCheck" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.9"
-                android:inputType="text"
-                android:labelFor="@id/stringpromptmsg"
-                android:singleLine="true"
-                android:text="@string/default_prompt"
-                tools:ignore="Autofill,TouchTargetSizeCheck" />
-        </LinearLayout>
+                android:layout_marginBottom="0dp"
+                android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/stringnegpromptmsg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/field_negative"
+                    android:labelFor="@id/stringnegprompt"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
 
-            <TextView
-                android:id="@+id/stringnegpromptmsg"
-                android:layout_width="0dp"
+                <EditText
+                    android:id="@+id/stringnegprompt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:labelFor="@id/stringnegpromptmsg"
+                    android:singleLine="false"
+                    android:text="@string/default_negative"
+                    tools:ignore="autofill,TouchTargetSizeCheck" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:text="@string/field_negative"
-                android:labelFor="@id/stringnegprompt"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+                android:orientation="vertical">
 
-            <EditText
-                android:id="@+id/stringnegprompt"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.9"
-                android:inputType="text"
-                android:labelFor="@id/stringnegpromptmsg"
-                android:singleLine="true"
-                android:text="@string/default_negative"
-                tools:ignore="autofill,TouchTargetSizeCheck" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="6dp"
+                    android:text="@string/field_modelfile"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.1"
-                android:text="@string/field_modelfile"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <Spinner
-                android:id="@+id/spinner1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.77"
-                android:background="@android:color/system_accent1_50"
-                android:minHeight="48dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                tools:ignore="ExtraText,TouchTargetSizeCheck" />
+                <Spinner
+                    android:id="@+id/model_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/system_accent1_50"
+                    android:minHeight="48dp"
+                    tools:ignore="ExtraText,TouchTargetSizeCheck" />
+            </LinearLayout>
 
             <CheckBox
                 android:id="@+id/usecpu"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.13"
                 android:checked="false"
                 android:enabled="false"
                 android:text="@string/field_cpu"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
-        </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.22"
-                android:text="@string/field_lorapath"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/lorapath"
-                android:layout_width="0dp"
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/field_lorapath"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <TextView
+                    android:id="@+id/lorapath"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <CheckBox
+                    android:id="@+id/embeddchecker"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/field_embedd"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.65"
+                android:layout_marginBottom="0dp"
+                android:orientation="horizontal">
+
+                <CheckBox
+                    android:id="@+id/taesdchecker"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/field_taesd"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <CheckBox
+                    android:id="@+id/taesdXLchecker"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/field_taesdXL"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="0dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/taesdmodel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingBottom="6dp"
+                    android:paddingRight="6dp"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <TextView
+                    android:id="@+id/taesdXLmodel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingBottom="6dp"
+                    android:paddingLeft="6dp"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingRight="6dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0"
+                        android:text="@string/field_steps"
+                        android:textAlignment="center"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <EditText
+                        android:id="@+id/stringsteps"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:singleLine="true"
+                        android:text="@string/default_steps"
+                        tools:ignore="autofill,TouchTargetSizeCheck" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingLeft="6dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/stringseedmsg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0"
+                        android:text="@string/field_seed"
+                        android:textAlignment="gravity"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <EditText
+                        android:id="@+id/stringseed"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:inputType="numberSigned"
+                        android:labelFor="@id/stringseedmsg"
+                        android:singleLine="true"
+                        android:text="@string/default_minus1"
+                        tools:ignore="autofill,TouchTargetSizeCheck" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingRight="6dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/stringwxhmsg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0"
+                        android:text="@string/field_widthXheight"
+                        android:textAlignment="gravity"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <EditText
+                        android:id="@+id/stringwidth"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:labelFor="@id/stringwxhmsg"
+                        android:singleLine="true"
+                        android:text="@string/default_width"
+                        tools:ignore="autofill,TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
+
+                    <EditText
+                        android:id="@+id/stringheight"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:labelFor="@id/stringwxhmsg"
+                        android:singleLine="true"
+                        android:text="@string/default_height"
+                        tools:ignore="autofill,TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingLeft="6dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/stringcfgmsg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0"
+                        android:text="@string/field_cfgs"
+                        android:textAlignment="center"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <EditText
+                        android:id="@+id/stringcfgscale"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:inputType="numberDecimal"
+                        android:labelFor="@id/stringcfgmsg"
+                        android:singleLine="true"
+                        android:text="@string/default_cfg"
+                        tools:ignore="autofill,TouchTargetSizeCheck" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
                 android:paddingTop="6dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/samplermsg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/sampler"
+                    android:textAlignment="center"
+                    android:paddingRight="6dp"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <TextView
+                    android:id="@+id/schedulermsg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/scheduler"
+                    android:textAlignment="center"
+                    android:paddingLeft="6dp"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
                 android:paddingBottom="6dp"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+                android:layout_height="wrap_content">
 
-            <CheckBox
-                android:id="@+id/embeddchecker"
-                android:layout_width="0dp"
+                <Spinner
+                    android:id="@+id/sampler_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@color/system_accent1_50"
+                    android:paddingRight="6dp"
+                    android:padding="6dp" />
+
+                <Spinner
+                    android:id="@+id/scheduler_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@color/system_accent1_50"
+                    android:paddingLeft="6dp"
+                    android:padding="6dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.13"
-                android:text="@string/field_embedd"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+                android:layout_marginBottom="6dp"
+                android:orientation="vertical">
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/stringoptmsg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/field_options"
+                    android:labelFor="@id/stringprompt"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
-
-            <CheckBox
-                android:id="@+id/taesdchecker"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.22"
-                android:text="@string/field_taesd"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <TextView
-                android:id="@+id/taesdmodel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.78"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
-
-            <CheckBox
-                android:id="@+id/taesdXLchecker"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.22"
-                android:text="@string/field_taesdXL"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <TextView
-                android:id="@+id/taesdXLmodel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.78"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="0dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.07"
-                android:text="@string/field_steps"
-                android:textAlignment="center"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <EditText
-                android:id="@+id/stringsteps"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.07"
-                android:gravity="center"
-                android:inputType="number"
-                android:singleLine="true"
-                android:text="@string/default_steps"
-                tools:ignore="autofill,TouchTargetSizeCheck" />
-
-            <TextView
-                android:id="@+id/stringseedmsg"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.07"
-                android:text="@string/field_seed"
-                android:textAlignment="gravity"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <EditText
-                android:id="@+id/stringseed"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.07"
-                android:gravity="center"
-                android:inputType="numberSigned"
-                android:labelFor="@id/stringseedmsg"
-                android:singleLine="true"
-                android:text="@string/default_minus1"
-                tools:ignore="autofill,TouchTargetSizeCheck" />
-
-            <TextView
-                android:id="@+id/stringwxhmsg"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.07"
-                android:text="@string/field_widthXheight"
-                android:textAlignment="gravity"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <EditText
-                android:id="@+id/stringwidth"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.09"
-                android:gravity="center"
-                android:inputType="number"
-                android:labelFor="@id/stringwxhmsg"
-                android:singleLine="true"
-                android:text="@string/default_height"
-                tools:ignore="autofill,TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
-
-            <EditText
-                android:id="@+id/stringheight"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.09"
-                android:gravity="center"
-                android:inputType="number"
-                android:labelFor="@id/stringwxhmsg"
-                android:singleLine="true"
-                android:text="@string/default_height"
-                tools:ignore="autofill,TouchTargetSizeCheck,DuplicateSpeakableTextCheck" />
-
-            <TextView
-                android:id="@+id/stringcfgmsg"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.05"
-                android:text="@string/field_cfgs"
-                android:textAlignment="center"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            <EditText
-                android:id="@+id/stringcfgscale"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.07"
-                android:gravity="center"
-                android:inputType="numberDecimal"
-                android:labelFor="@id/stringcfgmsg"
-                android:singleLine="true"
-                android:text="@string/default_cfg"
-                tools:ignore="autofill,TouchTargetSizeCheck" />
-
-            <Spinner
-                android:id="@+id/spinner2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.11"
-                android:background="@android:color/system_accent1_50"
-                android:padding="6dp"
-                tools:ignore="TouchTargetSizeCheck" />
+                <EditText
+                    android:id="@+id/stringopt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:labelFor="@id/stringpromptmsg"
+                    android:singleLine="false"
+                    android:text="@string/options"
+                    tools:ignore="Autofill,TouchTargetSizeCheck" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/submitButton"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:layout_weight="0.18"
                 android:text="@string/submit"
-                tools:ignore="TouchTargetSizeCheck" />
+                android:layout_margin="15dp" />
         </LinearLayout>
-
-
-    </LinearLayout>
-
+    </ScrollView>
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -333,7 +422,18 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:autoSizeTextType="uniform"
-            android:text="@string/close" />
+            android:text="@string/close"
+            tools:ignore="UnusedAttribute" />
+
+        <View
+            android:id="@+id/coverView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:alpha="0.0"
+            android:clickable="false"
+            android:focusable="false"
+            android:visibility="gone" />
     </FrameLayout>
 
 </LinearLayout>
