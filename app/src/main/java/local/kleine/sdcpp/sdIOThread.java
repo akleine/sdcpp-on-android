@@ -8,6 +8,7 @@ import java.util.Map;
 
 class sdIOThread extends Thread implements Runnable {
     public static volatile Process process = null;
+    final private static Object process_lock = new Object();
     private volatile SDActivity myActivity;
 
     sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath ) {
@@ -37,13 +38,15 @@ class sdIOThread extends Thread implements Runnable {
     }
 
     public void processDestroy() {
-        if (process != null) {
-            try {
-                process.destroy();
-                myActivity.processInfo("sd.cpp aborted");
-            } catch (Exception ignored) {
-            } finally {
-                process = null;
+        synchronized (process_lock) {
+            if (process != null) {
+                try {
+                    process.destroy();
+                    myActivity.processInfo("sd.cpp aborted");
+                } catch (Exception ignored) {
+                } finally {
+                    process = null;
+                }
             }
         }
     }
@@ -70,9 +73,6 @@ class sdIOThread extends Thread implements Runnable {
             } catch (Exception e) {
                 myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
             } finally {
-                try {
-                    sleep(250);                 // to not display "destroyed" twice
-                } catch (Exception ignored) {}  // if process was already cancelled
                 processDestroy();
                 myActivity.restoreScreenBrightness();
             }
