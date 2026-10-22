@@ -8,6 +8,7 @@ import java.util.Map;
 
 class sdIOThread extends Thread implements Runnable {
     public static volatile Process process = null;
+    public static volatile boolean isRunning = false;
     final private static Object process_lock = new Object();
     private volatile SDActivity myActivity;
 
@@ -54,10 +55,13 @@ class sdIOThread extends Thread implements Runnable {
     @Override
     public void run() {
         if (process != null) {
+            isRunning = true;
             myActivity.addScreenDimmer();
             myActivity.lockScreenOn();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
+                // synchronization is needless because i/o exception
+                // will be handled as cancellation (process == null)
                 while (process != null && (line = reader.readLine()) != null) {
                     if (!line.isEmpty()) {
                         myActivity.debugMsg(line);
@@ -73,9 +77,13 @@ class sdIOThread extends Thread implements Runnable {
             } catch (Exception e) {
                 myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
             } finally {
+                // zero process to indicate that it was stopped / finished
                 processDestroy();
                 myActivity.restoreScreenBrightness();
             }
+            // allowing SDActivity to finish only after
+            // all toasts were put into UI message queue
+            isRunning = false;
         }
     }
 }
