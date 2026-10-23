@@ -11,6 +11,7 @@ class sdIOThread extends Thread implements Runnable {
     public static volatile boolean isRunning = false;
     final private static Object process_lock = new Object();
     private volatile SDActivity myActivity;
+    private boolean wasNotInterrupted = false;
 
     sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath ) {
         myActivity = parent;
@@ -43,7 +44,7 @@ class sdIOThread extends Thread implements Runnable {
             if (process != null) {
                 try {
                     process.destroy();
-                    myActivity.processInfo("sd.cpp aborted");
+                    if (!wasNotInterrupted) myActivity.processInfo("sd.cpp aborted");
                 } catch (Exception ignored) {
                 } finally {
                     process = null;
@@ -69,6 +70,7 @@ class sdIOThread extends Thread implements Runnable {
                 }
                 if (process != null) {
                     myActivity.subFinished(process.waitFor(), "");
+                    wasNotInterrupted = true;
                 } else {
                     myActivity.subFinished(0, "cancelled");
                     // close button calls finish() too early
