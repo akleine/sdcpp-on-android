@@ -239,6 +239,7 @@ public class SDActivity extends AppCompatActivity {
             intent.putExtra("result", "ready");
             setResult(RESULT_OK, intent);  // do not restart, notification will be in subFinished()
             // waiting for sdIOThread to show all toasts before SDActivity.finish()
+            // with 1 second timeout
             new Thread() {
                 public void run() {
                     long t0 = System.currentTimeMillis();
@@ -250,13 +251,15 @@ public class SDActivity extends AppCompatActivity {
                         } catch (Exception ignored) {
                         }
                     }
-                    runOnUiThread(SDActivity.this::finish);
-                    if (outputArrayList != null) {
-                        outputArrayList.clear();
-                    }
-                    outputArrayList = null;
-                    outputImagePath = "";
-                    lastMsg = "";
+                    runOnUiThread(() -> {
+                        SDActivity.this.finish();
+                        if (outputArrayList != null) {
+                            outputArrayList.clear();
+                        }
+                        outputArrayList = null;
+                        outputImagePath = "";
+                        lastMsg = "";
+                    });
                 }
             }.start();
         }
