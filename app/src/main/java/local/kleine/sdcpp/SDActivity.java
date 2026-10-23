@@ -235,12 +235,6 @@ public class SDActivity extends AppCompatActivity {
                 sd_thread.processDestroy();
             }
             sd_thread = null;
-            if (outputArrayList != null) {
-                outputArrayList.clear();
-            }
-            outputArrayList = null;
-            outputImagePath = "";
-            lastMsg = "";
             Intent intent = new Intent(SDActivity.this, MainActivity.class);
             intent.putExtra("result", "ready");
             setResult(RESULT_OK, intent);  // do not restart, notification will be in subFinished()
@@ -257,6 +251,12 @@ public class SDActivity extends AppCompatActivity {
                         }
                     }
                     runOnUiThread(SDActivity.this::finish);
+                    if (outputArrayList != null) {
+                        outputArrayList.clear();
+                    }
+                    outputArrayList = null;
+                    outputImagePath = "";
+                    lastMsg = "";
                 }
             }.start();
         }
