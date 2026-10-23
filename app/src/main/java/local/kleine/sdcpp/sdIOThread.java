@@ -71,9 +71,13 @@ class sdIOThread extends Thread implements Runnable {
                     myActivity.subFinished(process.waitFor(), "");
                 } else {
                     myActivity.subFinished(0, "cancelled");
+                    // close button calls finish() too early
+                    // and toast doesn't have time to display
+                    try { Thread.sleep(500); } catch (Exception ignored) {}
                 }
             } catch (java.io.IOException e) {
                 myActivity.subFinished(0, "cancelled");
+                try { Thread.sleep(500); } catch (Exception ignored) {}
             } catch (Exception e) {
                 myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
             } finally {
