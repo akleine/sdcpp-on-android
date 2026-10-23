@@ -233,19 +233,35 @@ public class SDActivity extends AppCompatActivity {
             restoreScreenBrightness();
             if (sd_thread != null) {
                 sd_thread.processDestroy();
-                sd_thread.updateActivity(null);
             }
             sd_thread = null;
-            if (outputArrayList != null) {
-                outputArrayList.clear();
-            }
-            outputArrayList = null;
-            outputImagePath = "";
-            lastMsg = "";
             Intent intent = new Intent(SDActivity.this, MainActivity.class);
             intent.putExtra("result", "ready");
             setResult(RESULT_OK, intent);  // do not restart, notification will be in subFinished()
-            finish();
+            // waiting for sdIOThread to show all toasts before SDActivity.finish()
+            // with 1 second timeout
+            new Thread() {
+                public void run() {
+                    long t0 = System.currentTimeMillis();
+                    while (sdIOThread.isRunning
+                            && System.currentTimeMillis() - t0 < 1000) {
+                        try {
+                            //noinspection BusyWait
+                            Thread.sleep(100);
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    runOnUiThread(() -> {
+                        finish();
+                        if (outputArrayList != null) {
+                            outputArrayList.clear();
+                        }
+                        outputArrayList = null;
+                        outputImagePath = "";
+                        lastMsg = "";
+                    });
+                }
+            }.start();
         }
     };
 
@@ -450,7 +466,7 @@ public class SDActivity extends AppCompatActivity {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(outputImagePath + ".sh"));
                 args = arguments.toArray(args).clone();  // always expanded
                 if (libPath.contains(libVendorPath)) {
-                    args[0]= "LD_LIBRARY_PATH=" + libVendorPath + " sd \\\n";
+                    args[0] = "LD_LIBRARY_PATH=" + libVendorPath + " sd \\\n";
                 } else {
                     args[0] = "sd \\\n";
                 }
