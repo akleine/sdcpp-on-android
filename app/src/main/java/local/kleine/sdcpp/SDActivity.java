@@ -252,7 +252,7 @@ public class SDActivity extends AppCompatActivity {
                         }
                     }
                     runOnUiThread(() -> {
-                        SDActivity.this.finish();
+                        finish();
                         if (outputArrayList != null) {
                             outputArrayList.clear();
                         }
