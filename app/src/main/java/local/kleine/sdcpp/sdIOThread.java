@@ -8,7 +8,10 @@ import java.util.Map;
 
 class sdIOThread extends Thread implements Runnable {
     public static volatile Process process = null;
+    public static volatile boolean isRunning = false;
+    final private static Object process_lock = new Object();
     private volatile SDActivity myActivity;
+    private boolean wasNotInterrupted = false;
 
     sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath ) {
         myActivity = parent;
@@ -37,13 +40,15 @@ class sdIOThread extends Thread implements Runnable {
     }
 
     public void processDestroy() {
-        if (process != null) {
-            try {
-                process.destroy();
-                myActivity.processInfo("sd.cpp aborted");
-            } catch (Exception ignored) {
-            } finally {
-                process = null;
+        synchronized (process_lock) {
+            if (process != null) {
+                try {
+                    process.destroy();
+                    if (!wasNotInterrupted) myActivity.processInfo("sd.cpp aborted");
+                } catch (Exception ignored) {
+                } finally {
+                    process = null;
+                }
             }
         }
     }
@@ -51,10 +56,13 @@ class sdIOThread extends Thread implements Runnable {
     @Override
     public void run() {
         if (process != null) {
+            isRunning = true;
             myActivity.addScreenDimmer();
             myActivity.lockScreenOn();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
+                // synchronization is needless because i/o exception
+                // will be handled as cancellation (process == null)
                 while (process != null && (line = reader.readLine()) != null) {
                     if (!line.isEmpty()) {
                         myActivity.debugMsg(line);
@@ -62,20 +70,26 @@ class sdIOThread extends Thread implements Runnable {
                 }
                 if (process != null) {
                     myActivity.subFinished(process.waitFor(), "");
+                    wasNotInterrupted = true;
                 } else {
                     myActivity.subFinished(0, "cancelled");
+                    // close button calls finish() too early
+                    // and toast doesn't have time to display
+                    try { Thread.sleep(500); } catch (Exception ignored) {}
                 }
             } catch (java.io.IOException e) {
                 myActivity.subFinished(0, "cancelled");
+                try { Thread.sleep(500); } catch (Exception ignored) {}
             } catch (Exception e) {
                 myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
             } finally {
-                try {
-                    sleep(250);                 // to not display "destroyed" twice
-                } catch (Exception ignored) {}  // if process was already cancelled
+                // zero process to indicate that it was stopped / finished
                 processDestroy();
                 myActivity.restoreScreenBrightness();
             }
+            // allowing SDActivity to finish only after
+            // all toasts were put into UI message queue
+            isRunning = false;
         }
     }
 }
