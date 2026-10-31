@@ -35,11 +35,13 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -51,7 +53,7 @@ import java.util.List;
 
 public class SDActivity extends AppCompatActivity {
 
-    public static final int EXIT_CODE_DO_RESTART   = 1001;
+    public static final int EXIT_CODE_DO_RESTART = 1001;
 
     private static volatile String outputImagePath = "";
     private static volatile ArrayList<String> outputArrayList = null;
@@ -106,7 +108,7 @@ public class SDActivity extends AppCompatActivity {
             "exponential",
             "ays",
             "gits",
-            "sgm_uniform",
+            "sgm_uniform", /* Pos 5 */
             "simple",
             "smoothstep",
             "kl_optimal",
@@ -119,7 +121,7 @@ public class SDActivity extends AppCompatActivity {
             "beta",
             "llada_image",
     };
-
+    private static final int SGM_POS = 5;
     private List<String> fileList, samplerList, schedulerList;
     private static String lastMsg = "";
 
@@ -216,7 +218,7 @@ public class SDActivity extends AppCompatActivity {
                 if (/*  Build.VERSION.SDK_INT < Build.VERSION_CODES.M || //*/
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
                                 (Boolean.TRUE.equals(permissions.get(Manifest.permission.READ_EXTERNAL_STORAGE)) &&
-                                 Boolean.TRUE.equals(permissions.get(Manifest.permission.WRITE_EXTERNAL_STORAGE)))) {
+                                        Boolean.TRUE.equals(permissions.get(Manifest.permission.WRITE_EXTERNAL_STORAGE)))) {
                     runSDcpp();
                 } else {
                     setResult(EXIT_CODE_DO_RESTART);
@@ -224,8 +226,7 @@ public class SDActivity extends AppCompatActivity {
                 }
             });
 
-    final View.OnClickListener cancelGenerationListener = new View.OnClickListener()
-    {
+    final View.OnClickListener cancelGenerationListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             View coverView = myActivity.findViewById(R.id.coverView);
@@ -389,27 +390,29 @@ public class SDActivity extends AppCompatActivity {
             if (taesdXLchecker.isChecked()) {
                 taesdoption = taesdXLModel;
             }
-/* 0 */     ArrayList<String> arguments = new ArrayList<>(Arrays.asList("",
-/* 1 2 */           "-m", selectedModelfile,
-/* 3 4 */           "-p", prompt,
-/* 5 6 */           "-n", negative,
-/* 7 8 */           "-o", outputImagePath,
-/* 9 10 */          "--lora-model-dir", helperPath,
-/* 11 12 */         "--embd-dir", embeddchecker.isChecked() ? helperPath : "",
-/* 13 14 */         "--sampling-method", selectedSampler,
-/* 15 16 */         "--taesd", taesdoption,
-/* 17 18 */         "--cfg-scale", check(cfgscaleEditor.getText().toString(), "7.0"),
-/* 19 20 */         "--seed", check(seedEditor.getText().toString(), "-1"),
-/* 21 22 */         "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
-/* 23 24 */         "--width", checkDimension(widthEditor.getText().toString(), "512"),
-/* 25 26 */         "--height", checkDimension(heightEditor.getText().toString(), "512"),
-/* 27 28 */         "--scheduler", selectedScheduler,
-/* 27 28 */         //"--schedule", selectedScheduler,
-/* 29 */            "-v"
+            /* 0 */
+            ArrayList<String> arguments = new ArrayList<>(Arrays.asList("",
+                    /* 1 2 */           "-m", sdWorkPath + File.separator + selectedModelfile,
+                    /* 3 4 */           "-p", prompt,
+                    /* 5 6 */           "-n", negative,
+                    /* 7 8 */           "-o", outputImagePath,
+                    /* 9 10 */          "--lora-model-dir", helperPath,
+                    /* 11 12 */         "--embd-dir", embeddchecker.isChecked() ? helperPath : "",
+                    /* 13 14 */         "--sampling-method", selectedSampler,
+                    /* 15 16 */         "--taesd", taesdoption,
+                    /* 17 18 */         "--cfg-scale", check(cfgscaleEditor.getText().toString(), "7.0"),
+                    /* 19 20 */         "--seed", check(seedEditor.getText().toString(), "-1"),
+                    /* 21 22 */         "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
+                    /* 23 24 */         "--width", checkDimension(widthEditor.getText().toString(), "512"),
+                    /* 25 26 */         "--height", checkDimension(heightEditor.getText().toString(), "512"),
+                    /* 27 28 */         "--scheduler", selectedScheduler,
+                    /* 29 */            "-v"
                     // "--mmap"  // --params-backend seems to work better
             ));
-            libPath = nativeLibDir.toString();
-            String libVendorPath = "/vendor/lib64";
+            // we can use arguments.add() even if overwriting an earlier argument, no problem for sd.cpp,
+            // and we can overwrite earlier arguments by using optionsEditor's contents (at the end of list)
+            libPath = nativeLibDir.toString();      // get openCL libs
+            String libVendorPath = "/vendor/lib64"; // no support possible for 32 bit with openCL
             if (cpuchecker.isChecked()) {
                 sdFileName = SDlib;
                 arguments.add("--vae-tiling");  // currently not for openCL
@@ -424,13 +427,10 @@ public class SDActivity extends AppCompatActivity {
                             arguments.add("q8_0"); //"q4_0";
                         } // else keep as GGUF is
                     } else {
-                        if (selectedModelfile.toUpperCase().contains("NITRO")) {
+                        if (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ||
+                                selectedModelfile.toUpperCase().contains("DIFF-INSTRUCTSTAR")) {
                             arguments.add("--type");
                             arguments.add("q4_0");
-                            arguments.add("--scheduler");
-                            arguments.add("sgm_uniform");
-                            arguments.add("--timestep-shift");
-                            arguments.add("250");
                         }
                     }
                 }
@@ -441,9 +441,7 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--diffusion-conv-direct");
                 arguments.add("--vae-conv-direct");
                 arguments.add("--type");
-                arguments.add("q4_0");  // "f16";    (optimal for huge VRAM)
-                arguments.add("-t");    // for q4_0  (less VRAM)
-                arguments.add("1");     // for q4_0  (less VRAM)
+                arguments.add("q4_0");  // "f16"; = optimal for huge VRAM
             }
             File file = new File(nativeLibDir, sdFileName);
             if (!(file.exists() && file.length() > 0)) {
@@ -494,7 +492,8 @@ public class SDActivity extends AppCompatActivity {
             if (sd_thread != null) {
                 try {
                     sd_thread.processDestroy();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             sd_thread = new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath);
             sd_thread.start();
@@ -644,6 +643,7 @@ public class SDActivity extends AppCompatActivity {
                     closeButton.setVisibility(v ? View.GONE : View.VISIBLE);
                     return true;
                 }
+
                 @Override
                 public boolean onDoubleTap(@NonNull MotionEvent e) {
                     boolean v = closeButton.getVisibility() == View.VISIBLE;
@@ -785,7 +785,7 @@ public class SDActivity extends AppCompatActivity {
                                     helperPath = file.getParent();      // for LoRA and taesd etc
                                 } else {
                                     if (file.length() > (500 * 1024 * 1024)) {
-                                        fileList.add(file.getAbsolutePath());
+                                        fileList.add(file.getAbsolutePath().substring(sdWorkPath.length() + 1));
                                     }
                                 }
                             }
@@ -806,7 +806,8 @@ public class SDActivity extends AppCompatActivity {
 
     final public void processInfo(String info) {
         final Process process = sdIOThread.process;
-        if (process != null) runOnUiThread(() -> Toast.makeText(myActivity, info + "\n" + process, Toast.LENGTH_SHORT).show());
+        if (process != null)
+            runOnUiThread(() -> Toast.makeText(myActivity, info + "\n" + process, Toast.LENGTH_SHORT).show());
     }
 
     TextWatcher createTextWatcher() {
@@ -832,20 +833,38 @@ public class SDActivity extends AppCompatActivity {
         };
     }
 
+
     public class ItemSelectedListener implements AdapterView.OnItemSelectedListener {
+        @SuppressLint("SetTextI18n")
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             if (parent.getId() == R.id.model_spinner) {
                 selectedModelfile = fileList.get(position);
-                // here follow some lazy checks for easy defaults:
-                if (selectedModelfile.toUpperCase().contains("SDXS")) {
+                // here follow some lazy checks for easy defaults - just for the moment
+                // ** ToDo ** : better use some receipes, just like this example:
+                // https://github.com/leejet/stable-diffusion.cpp/blob/master/examples/server/recipes/sdxs.json
+                if (selectedModelfile.toUpperCase().contains("SDXS")
+                        || selectedModelfile.toUpperCase().contains("STAR")
+                        || selectedModelfile.toUpperCase().contains("NITRO")) {
                     stepsEditor.setText("1");
                     cfgscaleEditor.setText("1");
-                    taesdXLchecker.setChecked(false);
-                    taesdchecker.setChecked(false);
-                } else {
+                    if (selectedModelfile.toUpperCase().contains("STAR")
+                            || selectedModelfile.toUpperCase().contains("NITRO")) {
+                        Spinner scheduler_spinner = findViewById(R.id.scheduler_spinner);
+                        scheduler_spinner.setSelection(SGM_POS);
+                        String options = optionsEditor.getText().toString();
+                        // openCL is better without "--fa" here
+                        options = options.replace("--fa", "");
+                        optionsEditor.setText(options + " --timestep-shift "
+                                + (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ? "250" : "400"));
+                    } else {
+                        taesdXLchecker.setChecked(false);
+                        taesdchecker.setChecked(false);
+                    }
                     if (selectedModelfile.toUpperCase().contains("SSD")
                             || selectedModelfile.toUpperCase().contains("VEGA")
+                            || selectedModelfile.toUpperCase().contains("STAR")
+                            || selectedModelfile.toUpperCase().contains("NITRO")
                             || selectedModelfile.toUpperCase().contains("XL")) {
                         if (!taesdXLModel.isEmpty()) {
                             taesdXLchecker.setChecked(true);

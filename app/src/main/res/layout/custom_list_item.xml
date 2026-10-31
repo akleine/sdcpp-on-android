@@ -10,6 +10,6 @@
         android:fontFamily="monospace"
         android:textAppearance="?android:textAppearanceMedium"
         android:background="@color/black"
-        android:textColor= "@color/teal_200"
+        android:textColor= "@color/white"
         android:textSize="11sp" />
 </LinearLayout>
