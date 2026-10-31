@@ -55,6 +55,7 @@ public class SDActivity extends AppCompatActivity {
 
     private static volatile String outputImagePath = "";
     private static volatile ArrayList<String> outputArrayList = null;
+    private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
     private Activity myActivity;
     private String sdProgramPath, selectedModelfile, selectedSampler, selectedScheduler, taesdModel, taesdXLModel, helperPath,
@@ -73,7 +74,7 @@ public class SDActivity extends AppCompatActivity {
     private Button closeButton;
     private ImageView imageOutputView;
     private ArrayAdapter<String> arrayAdapter;
-    private boolean lastProgressBar = true;               // helper for message log
+    private static boolean lastProgressBar = false;  // helper for message log
     private final String[] samplerArr = {
             "euler",
             "euler_a",
@@ -252,12 +253,13 @@ public class SDActivity extends AppCompatActivity {
                         }
                     }
                     runOnUiThread(() -> {
-                        finish();
+                        finish();  // logList will be auto-cleared
                         if (outputArrayList != null) {
                             outputArrayList.clear();
                         }
                         outputArrayList = null;
                         outputImagePath = "";
+                        lastProgressBar = false;
                         lastMsg = "";
                     });
                 }
@@ -278,7 +280,8 @@ public class SDActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         sdLogView = findViewById(R.id.sdLogView);
-        arrayAdapter = new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.output_item_line, outputArrayList);
+        logList = new ArrayList<>(outputArrayList);
+        arrayAdapter = new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.output_item_line, logList);
         sdLogView.setAdapter(arrayAdapter);
         imageOutputView = findViewById(R.id.outputImageView);
         coverView = findViewById(R.id.coverView);
@@ -667,28 +670,47 @@ public class SDActivity extends AppCompatActivity {
         });
     }
 
-    public void debugMsg(final String msg) {
+    public static boolean updateLog(final String msg) {
+        final String clearToEOL = "\u001B[K";
+        String text = msg;
+        if (text.contains(clearToEOL)) {
+            text = text.replace(clearToEOL, "");
+        }
+        if (lastMsg.equals(text)) {
+            return false;  // nothing changed
+        }
+        boolean isProgressBar = text.startsWith("  |");
+        if (!isProgressBar || !lastProgressBar) {
+            outputArrayList.add(text);  // new line or start of bar
+        } else {
+            outputArrayList.set(outputArrayList.size() - 1, text);  // update the bae in same line
+        }
+        lastProgressBar = isProgressBar;
+        lastMsg = text;
+        return true;
+    }
+
+    public void updateLogView() {
         runOnUiThread(() -> {
-            boolean isProgressBar = msg.startsWith("  |");
-            final String clearToEOL = "\u001B[K";
-            String text = msg;
-            if (lastProgressBar && !isProgressBar) {
-                outputArrayList.add("");  // at log begin and at progress bar end
-            }
-            if (text.contains(clearToEOL)) {
-                text = text.replace(clearToEOL, "");
-            }
-            int last = outputArrayList.size() - 1;
-            if (!lastMsg.equals(text)) {
-                outputArrayList.set(last, text);
-                lastProgressBar = isProgressBar;
-                if (!isProgressBar) {
-                    outputArrayList.add("");  // new line if no progress bar
+            int countA = logList.size();
+            int countL = outputArrayList.size();
+            boolean doUpdate = false;
+            if (countA != 0 && countL >= countA) {
+                int lastA = countA - 1;
+                String line = outputArrayList.get(lastA);
+                if (!line.equals(logList.get(lastA))) {
+                    logList.set(lastA, line);
+                    doUpdate = true;
                 }
-                arrayAdapter.notifyDataSetChanged();
-                sdLogView.setSelection(last);
             }
-            lastMsg = text;
+            if (countL > countA) {
+                logList.addAll(outputArrayList.subList(countA, countL));
+                doUpdate = true;
+            }
+            if (doUpdate) {
+                arrayAdapter.notifyDataSetChanged();
+                sdLogView.setSelection(countL - 1);
+            }
         });
     }
 

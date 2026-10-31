@@ -30,7 +30,7 @@ class sdIOThread extends Thread implements Runnable {
             String msg = myActivity.getString(R.string.can_not_run_sd_process) + e.getMessage();
             myActivity.addScreenDimmer();
             myActivity.subFinished(0, msg);
-            myActivity.debugMsg(msg);
+            debugMsg(msg);
             myActivity.restoreScreenBrightness();
         }
     }
@@ -53,6 +53,15 @@ class sdIOThread extends Thread implements Runnable {
         }
     }
 
+    private void debugMsg(final String line) {
+        if (SDActivity.updateLog(line)) {
+            final SDActivity a = myActivity;
+            if (a != null && !a.isFinishing() && !a.isDestroyed()) {
+                a.updateLogView();
+            }
+        }
+    }
+
     @Override
     public void run() {
         if (process != null) {
@@ -65,7 +74,7 @@ class sdIOThread extends Thread implements Runnable {
                 // will be handled as cancellation (process == null)
                 while (process != null && (line = reader.readLine()) != null) {
                     if (!line.isEmpty()) {
-                        myActivity.debugMsg(line);
+                        debugMsg(line);
                     }
                 }
                 if (process != null) {
