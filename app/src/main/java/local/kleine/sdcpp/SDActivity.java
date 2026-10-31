@@ -54,7 +54,6 @@ import java.util.List;
 public class SDActivity extends AppCompatActivity {
 
     public static final int EXIT_CODE_DO_RESTART = 1001;
-
     private static volatile String outputImagePath = "";
     private static volatile ArrayList<String> outputArrayList = null;
     private ArrayList<String> logList = null;
@@ -70,7 +69,7 @@ public class SDActivity extends AppCompatActivity {
             getAbsolutePath();
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor, optionsEditor;
-    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, cpuchecker;
+    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker;
     private ListView sdLogView;
     private View coverView;
     private Button closeButton;
@@ -369,9 +368,9 @@ public class SDActivity extends AppCompatActivity {
         taesdXLchecker.setEnabled(!taesdXLModel.isEmpty());
         embeddchecker = findViewById(R.id.embeddchecker);
         embeddchecker.setEnabled(!helperPath.isEmpty());
-        cpuchecker = findViewById(R.id.usecpu);
-        cpuchecker.setChecked(!canUseOpenCL);
-        cpuchecker.setEnabled(canUseOpenCL);
+        gpuchecker = findViewById(R.id.usegpu);
+        gpuchecker.setChecked(canUseOpenCL);
+        gpuchecker.setEnabled(canUseOpenCL);
         TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v -> {
@@ -413,7 +412,7 @@ public class SDActivity extends AppCompatActivity {
             // and we can overwrite earlier arguments by using optionsEditor's contents (at the end of list)
             libPath = nativeLibDir.toString();      // get openCL libs
             String libVendorPath = "/vendor/lib64"; // no support possible for 32 bit with openCL
-            if (cpuchecker.isChecked()) {
+            if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
                 arguments.add("--vae-tiling");  // currently not for openCL
                 // for some budget devices with low RAM and NO usable openCL drivers:
@@ -857,10 +856,10 @@ public class SDActivity extends AppCompatActivity {
                         options = options.replace("--fa", "");
                         optionsEditor.setText(options + " --timestep-shift "
                                 + (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ? "250" : "400"));
-                    } else {
-                        taesdXLchecker.setChecked(false);
-                        taesdchecker.setChecked(false);
                     }
+                    taesdXLchecker.setChecked(false);
+                    taesdchecker.setChecked(false);
+                } else {
                     if (selectedModelfile.toUpperCase().contains("SSD")
                             || selectedModelfile.toUpperCase().contains("VEGA")
                             || selectedModelfile.toUpperCase().contains("STAR")
