@@ -1,6 +1,6 @@
-### _Before you read on, please note:_
+## _Before you read on, please note:_
 
-_Starting September 2026, a silent update, nonconsensually pushed by Google, will block every Android app whose developer hasn't registered with Google, signed their contract, paid up, and handed over government ID. More details here:  [**KEEP ANDROID OPEN**](https://keepandroidopen.org/en/)_
+_Starting January 2027, a silent update, nonconsensually pushed by Google, will block every Android app whose developer hasn't registered with Google, signed their contract, paid up, and handed over government ID. More details here:  [**KEEP ANDROID OPEN**](https://keepandroidopen.org/en/)_
 ***
 
 # This is the sdcpp-on-android project
@@ -21,16 +21,17 @@ Download these safetensors or ckpt files using your favorite web browser and sto
 * Grant permissions: Confirm the required storage permissions (see Security & Privacy Note below).
 
 * Generate an image in three steps
-The generated image files (PNG) are saved in 'Download' folder, called outputXXXXXXXXXX.png, where XXXXXXXXXX is the Unix timestamp of when the generation started. Also a log file is written, called outputXXXXXXXXXX.log.txt.
+The generated image files (JPG) are saved in 'Download' folder, called outputXXXXXXXXXX.jpg, where XXXXXXXXXX is the Unix timestamp of when the generation started. Also a log file is written, called outputXXXXXXXXXX.jpg.log.txt.
+Additionally a script file (outputXXXXXXXXXX.jpg.sh) is written, useful for subsequent repetitions of the process.
     
 ### Example: Generate an SDXS image (within seconds)
 
 | Step 1: first enter some input:|
 | :----- |
-| ![](assets/step21.jpg) |
+| ![](assets/step41.jpg) |
 
 
-| Step 2: wait some seconds:|
+| Step 2: wait some seconds (in fact, the screen is dimmed):|
 | :----- |
 | ![](assets/step22.jpg) |
 
@@ -44,17 +45,17 @@ The generated image files (PNG) are saved in 'Download' folder, called outputXXX
 
 | Step 1: first enter some input:|
 | :----- |
-| ![](assets/step31.jpg) |
+| ![](assets/step51.jpg) |
 
 
-| Step 2: wait some time:|
+| Step 2: wait some time (in fact, the screen is dimmed):|
 | :----- |
 | ![](assets/step32.jpg) |
 
 
 | Step 3: view your result:|
 | :----- |
-| ![](assets/step33.jpg) |
+| ![](assets/step53.jpg) |
  
         
 ## Build Instructions: 
