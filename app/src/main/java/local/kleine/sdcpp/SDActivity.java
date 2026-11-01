@@ -673,26 +673,6 @@ public class SDActivity extends AppCompatActivity {
         });
     }
 
-    public static boolean updateLog(final String msg) {
-        final String clearToEOL = "\u001B[K";
-        String text = msg;
-        if (text.contains(clearToEOL)) {
-            text = text.replace(clearToEOL, "");
-        }
-        if (lastMsg.equals(text)) {
-            return false;  // nothing changed
-        }
-        boolean isProgressBar = text.startsWith("  |");
-        if (!isProgressBar || !lastProgressBar) {
-            outputArrayList.add(text);  // new line or start of bar
-        } else {
-            outputArrayList.set(outputArrayList.size() - 1, text);  // update the bar in same line
-        }
-        lastProgressBar = isProgressBar;
-        lastMsg = text;
-        return true;
-    }
-
     public void updateLogView() {
         runOnUiThread(() -> {
             int countA = logList.size();
