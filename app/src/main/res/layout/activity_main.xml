@@ -88,12 +88,12 @@
             </LinearLayout>
 
             <CheckBox
-                android:id="@+id/usecpu"
+                android:id="@+id/usegpu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="false"
                 android:enabled="false"
-                android:text="@string/field_cpu"
+                android:text="@string/field_gpu"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <LinearLayout

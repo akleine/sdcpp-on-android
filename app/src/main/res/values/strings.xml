@@ -14,7 +14,7 @@
     <string name="default_minus1">-1</string>
     <string name="field_modelfile">model:</string>
     <string name="field_embedd">embeddings</string>
-    <string name="field_cpu">"CPU</string>
+    <string name="field_gpu">"GPU</string>
     <string name="field_taesd">"use taesd</string>
     <string name="field_taesdXL">use taesdXL</string>
     <string name="field_lorapath">lora path:</string>
