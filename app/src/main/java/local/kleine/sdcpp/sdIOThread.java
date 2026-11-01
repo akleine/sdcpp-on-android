@@ -3,18 +3,28 @@ package local.kleine.sdcpp;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 class sdIOThread extends Thread implements Runnable {
-    public static volatile Process process = null;
-    public static volatile boolean isRunning = false;
+    public volatile Process process = null;
+    public volatile boolean isRunning = false;
     final private static Object process_lock = new Object();
     private volatile SDActivity myActivity;
     private boolean wasNotInterrupted = false;
 
-    sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath ) {
+    // helpers for message log
+    private String lastMsg = "";
+    private boolean lastProgressBar = false;
+
+    final public String outputImagePath;
+
+    final public ArrayList<String> outputArrayList = new ArrayList<>();
+
+    sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath, String outputImage ) {
         myActivity = parent;
+        outputImagePath = outputImage;
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(arguments);
             if (!sdLibraryPath.isEmpty()) {
@@ -53,8 +63,28 @@ class sdIOThread extends Thread implements Runnable {
         }
     }
 
+    private boolean updateLog(final String msg) {
+        final String clearToEOL = "\u001B[K";
+        String text = msg;
+        if (text.contains(clearToEOL)) {
+            text = text.replace(clearToEOL, "");
+        }
+        if (lastMsg.equals(text)) {
+            return false;  // nothing changed
+        }
+        boolean isProgressBar = text.startsWith("  |");
+        if (!isProgressBar || !lastProgressBar) {
+            outputArrayList.add(text);  // new line or start of bar
+        } else {
+            outputArrayList.set(outputArrayList.size() - 1, text);  // update the bae in same line
+        }
+        lastProgressBar = isProgressBar;
+        lastMsg = text;
+        return true;
+    }
+
     private void debugMsg(final String line) {
-        if (SDActivity.updateLog(line)) {
+        if (updateLog(line)) {
             final SDActivity a = myActivity;
             if (a != null && !a.isFinishing() && !a.isDestroyed()) {
                 a.updateLogView();
