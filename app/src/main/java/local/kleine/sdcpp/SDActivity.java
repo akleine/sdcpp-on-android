@@ -54,8 +54,7 @@ import java.util.List;
 public class SDActivity extends AppCompatActivity {
 
     public static final int EXIT_CODE_DO_RESTART = 1001;
-    private static volatile String outputImagePath = "";
-    private static volatile ArrayList<String> outputArrayList = null;
+
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
     private Activity myActivity;
@@ -75,8 +74,7 @@ public class SDActivity extends AppCompatActivity {
     private Button closeButton;
     private ImageView imageOutputView;
     private ArrayAdapter<String> arrayAdapter;
-    private static boolean lastProgressBar = false;  // helper for message log
-    private final String[] samplerArr = {
+    private static final String[] samplerArr = {
             "euler",
             "euler_a",
             "heun",
@@ -234,7 +232,6 @@ public class SDActivity extends AppCompatActivity {
             if (sd_thread != null) {
                 sd_thread.processDestroy();
             }
-            sd_thread = null;
             Intent intent = new Intent(SDActivity.this, MainActivity.class);
             intent.putExtra("result", "ready");
             setResult(RESULT_OK, intent);  // do not restart, notification will be in subFinished()
@@ -243,7 +240,7 @@ public class SDActivity extends AppCompatActivity {
             new Thread() {
                 public void run() {
                     long t0 = System.currentTimeMillis();
-                    while (sdIOThread.isRunning
+                    while (sd_thread != null && sd_thread.isRunning
                             && System.currentTimeMillis() - t0 < 1000) {
                         try {
                             //noinspection BusyWait
@@ -252,14 +249,8 @@ public class SDActivity extends AppCompatActivity {
                         }
                     }
                     runOnUiThread(() -> {
-                        finish();  // logList will be auto-cleared
-                        if (outputArrayList != null) {
-                            outputArrayList.clear();
-                        }
-                        outputArrayList = null;
-                        outputImagePath = "";
-                        lastProgressBar = false;
-                        lastMsg = "";
+                        sd_thread = null;
+                        finish();
                     });
                 }
             }.start();
@@ -278,7 +269,8 @@ public class SDActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         sdLogView = findViewById(R.id.sdLogView);
-        logList = new ArrayList<>(outputArrayList);
+        logList = (sd_thread == null) ? new ArrayList<>()
+                : new ArrayList<>(sd_thread.outputArrayList);
         arrayAdapter = new ArrayAdapter<>(this, R.layout.custom_list_item, R.id.output_item_line, logList);
         sdLogView.setAdapter(arrayAdapter);
         imageOutputView = findViewById(R.id.outputImageView);
@@ -391,7 +383,7 @@ public class SDActivity extends AppCompatActivity {
                     /* 1 2 */           "-m", sdWorkPath + File.separator + selectedModelfile,
                     /* 3 4 */           "-p", prompt,
                     /* 5 6 */           "-n", negative,
-                    /* 7 8 */           "-o", outputImagePath,
+                    /* 7 8 */           "-o", localOutputImagePath,
                     /* 9 10 */          "--lora-model-dir", helperPath,
                     /* 11 12 */         "--embd-dir", embeddchecker.isChecked() ? helperPath : "",
                     /* 13 14 */         "--sampling-method", selectedSampler,
@@ -666,41 +658,21 @@ public class SDActivity extends AppCompatActivity {
         });
     }
 
-    public static boolean updateLog(final String msg) {
-        final String clearToEOL = "\u001B[K";
-        String text = msg;
-        if (text.contains(clearToEOL)) {
-            text = text.replace(clearToEOL, "");
-        }
-        if (lastMsg.equals(text)) {
-            return false;  // nothing changed
-        }
-        boolean isProgressBar = text.startsWith("  |");
-        if (!isProgressBar || !lastProgressBar) {
-            outputArrayList.add(text);  // new line or start of bar
-        } else {
-            outputArrayList.set(outputArrayList.size() - 1, text);  // update the bae in same line
-        }
-        lastProgressBar = isProgressBar;
-        lastMsg = text;
-        return true;
-    }
-
     public void updateLogView() {
         runOnUiThread(() -> {
             int countA = logList.size();
-            int countL = outputArrayList.size();
+            int countL = sd_thread.outputArrayList.size();
             boolean doUpdate = false;
             if (countA != 0 && countL >= countA) {
                 int lastA = countA - 1;
-                String line = outputArrayList.get(lastA);
+                String line = sd_thread.outputArrayList.get(lastA);
                 if (!line.equals(logList.get(lastA))) {
                     logList.set(lastA, line);
                     doUpdate = true;
                 }
             }
             if (countL > countA) {
-                logList.addAll(outputArrayList.subList(countA, countL));
+                logList.addAll(sd_thread.outputArrayList.subList(countA, countL));
                 doUpdate = true;
             }
             if (doUpdate) {
@@ -801,7 +773,7 @@ public class SDActivity extends AppCompatActivity {
     //*/
 
     final public void processInfo(String info) {
-        final Process process = sdIOThread.process;
+        final Process process = (sd_thread == null) ? null : sd_thread.process;
         if (process != null)
             runOnUiThread(() -> Toast.makeText(myActivity, info + "\n" + process, Toast.LENGTH_SHORT).show());
     }
