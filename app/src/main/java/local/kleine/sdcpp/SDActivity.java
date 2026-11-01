@@ -639,6 +639,21 @@ public class SDActivity extends AppCompatActivity {
                     hideDecor(viewWindow, v);
                     return true;
                 }
+
+                public boolean onFling(MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
+                    if (e1 == null) return false;
+                    float dX = e2.getX() - e1.getX();
+                    float dY = e1.getY() - e2.getY();
+                    if (Math.abs(dX) > Math.abs(dY)) {
+                        if (dX > 0) {
+                            lockScreenOn();                      // right swipe
+                        } else {
+                            restoreScreenBrightness();           // left swipe
+                        }                                        // Up-/Down Swipe is needed for LOG view
+                        return true;
+                    }
+                    return false;
+                }
             });
             coverView.setOnTouchListener((View v, MotionEvent e) -> {
                 gestureDetector.onTouchEvent(e);
@@ -656,6 +671,26 @@ public class SDActivity extends AppCompatActivity {
             lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
             viewWindow.setAttributes(lp);
         });
+    }
+
+    public static boolean updateLog(final String msg) {
+        final String clearToEOL = "\u001B[K";
+        String text = msg;
+        if (text.contains(clearToEOL)) {
+            text = text.replace(clearToEOL, "");
+        }
+        if (lastMsg.equals(text)) {
+            return false;  // nothing changed
+        }
+        boolean isProgressBar = text.startsWith("  |");
+        if (!isProgressBar || !lastProgressBar) {
+            outputArrayList.add(text);  // new line or start of bar
+        } else {
+            outputArrayList.set(outputArrayList.size() - 1, text);  // update the bar in same line
+        }
+        lastProgressBar = isProgressBar;
+        lastMsg = text;
+        return true;
     }
 
     public void updateLogView() {
