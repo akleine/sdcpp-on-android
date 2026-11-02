@@ -3,6 +3,7 @@ package local.kleine.sdcpp;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -17,6 +18,7 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,6 +26,7 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -41,7 +44,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-
+import androidx.lifecycle.ViewModelProvider;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -55,6 +58,7 @@ public class SDActivity extends AppCompatActivity {
 
     public static final int EXIT_CODE_DO_RESTART = 1001;
 
+    private SDViewModel vm = null;
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
     private Activity myActivity;
@@ -69,9 +73,12 @@ public class SDActivity extends AppCompatActivity {
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor, optionsEditor;
     private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker;
+    private View wrapperView;
     private ListView sdLogView;
     private View coverView;
     private Button closeButton;
+    private Spinner sampler_spinner;
+    private Spinner scheduler_spinner;
     private ImageView imageOutputView;
     private ArrayAdapter<String> arrayAdapter;
     private static final String[] samplerArr = {
@@ -125,6 +132,7 @@ public class SDActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         myActivity = this;
+        vm = new ViewModelProvider(this).get(SDViewModel.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
                 && !Environment.isExternalStorageManager()) {
             setContentView(R.layout.activity_permissions);
@@ -147,7 +155,7 @@ public class SDActivity extends AppCompatActivity {
             // shouldShowRequestPermissionRationale() logic:
             // 1st launch     -> false
             // agree          -> false
-            // 1st rejection ,-> true (user probably needs an explanation)
+            // 1st rejection  -> true (user probably needs an explanation)
             // 2nd+ rejection -> false
             if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 // the user rejected once, on 2nd reject the access will be
@@ -225,7 +233,6 @@ public class SDActivity extends AppCompatActivity {
     final View.OnClickListener cancelGenerationListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            View coverView = myActivity.findViewById(R.id.coverView);
             coverView.setOnTouchListener(null);
             coverView.setVisibility(View.GONE);
             restoreScreenBrightness();
@@ -257,7 +264,7 @@ public class SDActivity extends AppCompatActivity {
         }
     };
 
-    private void setupWindow() {
+    private void setupLogWindow() {
         // setup, common for settings and log/result views
         androidx.appcompat.app.ActionBar ab = getSupportActionBar();
         if (ab != null) {
@@ -276,18 +283,24 @@ public class SDActivity extends AppCompatActivity {
         imageOutputView = findViewById(R.id.outputImageView);
         coverView = findViewById(R.id.coverView);
         closeButton = findViewById(R.id.closeButton);
+        wrapperView = findViewById(R.id.wrapperView);
     }
 
     @SuppressLint("SetTextI18n")
     public void runSDcpp() {
         if (sd_thread != null) {
             // SD.cpp is launched or was finished, displaying the log
-            setupWindow();
-            findViewById(R.id.wrapperView).setVisibility(View.GONE);
+            setupLogWindow();
+            wrapperView.setVisibility(View.GONE);
             addScreenDimmer();
             if (sd_thread != null && sd_thread.process != null) lockScreenOn();  // still running, prevent sleeping
-            findViewById(R.id.closeButton).setOnClickListener(cancelGenerationListener);
+            closeButton.setOnClickListener(cancelGenerationListener);
             sd_thread.updateActivity((SDActivity) myActivity);
+            File file = new File(sd_thread.outputImagePath);
+            if (file.exists()) {
+                imageOutputView.setVisibility(View.VISIBLE);
+                displayResultImageFile(file);
+            }
             return;
         }
         boolean canUseOpenCL = false;
@@ -302,7 +315,7 @@ public class SDActivity extends AppCompatActivity {
             }
         }
 
-        setupWindow();
+        setupLogWindow();
         promptEditor = findViewById(R.id.stringprompt);
         promptEditor.addTextChangedListener(createTextWatcher());
         negativeEditor = findViewById(R.id.stringnegprompt);
@@ -327,14 +340,14 @@ public class SDActivity extends AppCompatActivity {
         model_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         model_spinner.setAdapter(model_adapter);
 
-        Spinner sampler_spinner = findViewById(R.id.sampler_spinner);
+        sampler_spinner = findViewById(R.id.sampler_spinner);
         sampler_spinner.setOnItemSelectedListener(new ItemSelectedListener());
         samplerList = Arrays.asList(samplerArr);
         ArrayAdapter<String> sampler_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, samplerList);
         sampler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sampler_spinner.setAdapter(sampler_adapter);
 
-        Spinner scheduler_spinner = findViewById(R.id.scheduler_spinner);
+        scheduler_spinner = findViewById(R.id.scheduler_spinner);
         scheduler_spinner.setOnItemSelectedListener(new ItemSelectedListener());
         schedulerList = Arrays.asList(schedulerArr);
         ArrayAdapter<String> scheduler_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, schedulerList);
@@ -363,7 +376,6 @@ public class SDActivity extends AppCompatActivity {
         TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v -> {
-            View wrapperView = findViewById(R.id.wrapperView);
             wrapperView.setVisibility(View.GONE);
             String prompt = promptEditor.getText().toString();
             if (prompt.isEmpty()) {
@@ -485,6 +497,9 @@ public class SDActivity extends AppCompatActivity {
             }
             sd_thread = new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath, localOutputImagePath);
             sd_thread.start();
+
+            ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(wrapperView.getWindowToken(), 0);
+            closeButton.setOnClickListener(cancelGenerationListener);
         });
 
         TextView spm = findViewById(R.id.stringpromptmsg);
@@ -496,9 +511,6 @@ public class SDActivity extends AppCompatActivity {
             );
             return true;
         });
-
-        Button closeButton = findViewById(R.id.closeButton);
-        closeButton.setOnClickListener(cancelGenerationListener);
     }
 
     @NonNull
@@ -509,11 +521,20 @@ public class SDActivity extends AppCompatActivity {
     }
 
     private void displayResultImageFile(@NonNull File imgFile) {
-        Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
-        int h = myBitmap.getHeight();
-        int b = myBitmap.getWidth();
-        if (h > b) {
-            myBitmap = rotateBitmap(myBitmap, 270);
+        Bitmap myBitmap = vm.getBitmap();
+        if (myBitmap == null) {
+            myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+            vm.setBitmap(myBitmap);
+        }
+        int bh = myBitmap.getHeight();
+        int bw = myBitmap.getWidth();
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        int dh = dm.heightPixels;
+        int dw = dm.widthPixels;
+        boolean verticalImage = bh >= bw;
+        boolean verticalScreen = dh >= dw;
+        if (bh != bw && dh != dw && verticalImage != verticalScreen) {
+            myBitmap = rotateBitmap(myBitmap, verticalImage ? 270 : 90);
         }
         imageOutputView.setImageBitmap(myBitmap);
     }
@@ -808,7 +829,6 @@ public class SDActivity extends AppCompatActivity {
                 if (editable.toString().contains("<lora:")) {
                     // here some lazy checks:
                     if (editable.toString().toUpperCase().contains("LCM") || editable.toString().toUpperCase().contains("VEGA")) {
-                        Spinner sampler_spinner = findViewById(R.id.sampler_spinner);
                         sampler_spinner.setSelection(LCM_POS);
                     }
                 }
@@ -833,7 +853,6 @@ public class SDActivity extends AppCompatActivity {
                     cfgscaleEditor.setText("1");
                     if (selectedModelfile.toUpperCase().contains("STAR")
                             || selectedModelfile.toUpperCase().contains("NITRO")) {
-                        Spinner scheduler_spinner = findViewById(R.id.scheduler_spinner);
                         scheduler_spinner.setSelection(SGM_POS);
                         String options = optionsEditor.getText().toString();
                         // openCL is better without "--fa" here
