@@ -45,6 +45,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ViewModelProvider;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -293,7 +294,8 @@ public class SDActivity extends AppCompatActivity {
             setupLogWindow();
             wrapperView.setVisibility(View.GONE);
             addScreenDimmer();
-            if (sd_thread != null && sd_thread.process != null) lockScreenOn();  // still running, prevent sleeping
+            if (sd_thread != null && sd_thread.process != null)
+                lockScreenOn();  // still running, prevent sleeping
             closeButton.setOnClickListener(cancelGenerationListener);
             sd_thread.updateActivity((SDActivity) myActivity);
             File file = new File(sd_thread.outputImagePath);
@@ -413,8 +415,10 @@ public class SDActivity extends AppCompatActivity {
             // and we can overwrite earlier arguments by using optionsEditor's contents (at the end of list)
             libPath = nativeLibDir.toString();      // get openCL libs
             String libVendorPath = "/vendor/lib64"; // no support possible for 32 bit with openCL
+            String tempFolderPath;
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
+                tempFolderPath = "";
                 arguments.add("--vae-tiling");  // currently not for openCL
                 // for some budget devices with low RAM and NO usable openCL drivers:
                 if (selectedModelfile.toUpperCase().contains("SSD")) {
@@ -436,6 +440,7 @@ public class SDActivity extends AppCompatActivity {
                 }
             } else {
                 sdFileName = SDlibopenCL;
+                tempFolderPath = getApplicationContext().getCacheDir().getAbsolutePath();
                 libPath += ":" + libVendorPath;
                 // this settings seem to work quite well at openCL/ADRENO 810
                 arguments.add("--diffusion-conv-direct");
@@ -495,7 +500,7 @@ public class SDActivity extends AppCompatActivity {
                 } catch (Exception ignored) {
                 }
             }
-            sd_thread = new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath, localOutputImagePath);
+            sd_thread = new sdIOThread((SDActivity) myActivity, arguments, sdWorkPath, libPath, tempFolderPath, localOutputImagePath);
             sd_thread.start();
 
             ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(wrapperView.getWindowToken(), 0);

@@ -22,7 +22,7 @@ class sdIOThread extends Thread implements Runnable {
 
     final public ArrayList<String> outputArrayList = new ArrayList<>();
 
-    sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath, String outputImage ) {
+    sdIOThread(SDActivity parent, List<String> arguments, String sdWorkPath, String sdLibraryPath, String sdTempFolder, String outputImage) {
         myActivity = parent;
         outputImagePath = outputImage;
         try {
@@ -30,6 +30,8 @@ class sdIOThread extends Thread implements Runnable {
             if (!sdLibraryPath.isEmpty()) {
                 Map<String, String> environment = processBuilder.environment();
                 environment.put("LD_LIBRARY_PATH", sdLibraryPath);
+                environment.put("GGML_OPENCL_KERNEL_CACHE_DIR", sdTempFolder);
+                // environment.put("GGML_OPENCL_KERNEL_CACHE_DEBUG", "1");
             }
             processBuilder.directory(new File(sdWorkPath));
             processBuilder.redirectErrorStream(true);
@@ -114,11 +116,17 @@ class sdIOThread extends Thread implements Runnable {
                     myActivity.subFinished(0, "cancelled");
                     // close button calls finish() too early
                     // and toast doesn't have time to display
-                    try { Thread.sleep(500); } catch (Exception ignored) {}
+                    try {
+                        Thread.sleep(500);
+                    } catch (Exception ignored) {
+                    }
                 }
             } catch (java.io.IOException e) {
                 myActivity.subFinished(0, "cancelled");
-                try { Thread.sleep(500); } catch (Exception ignored) {}
+                try {
+                    Thread.sleep(500);
+                } catch (Exception ignored) {
+                }
             } catch (Exception e) {
                 myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
             } finally {
