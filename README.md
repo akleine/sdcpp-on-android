@@ -110,4 +110,3 @@ strip sd-cli
 ```
 
 After compiling rename the executable from 'sd-cli' to 'libsdopenCL.so' and place it near to 'libsd.so' . During execution, this app searches for a file named 'libsdopenCL.so' and suggest using it.
-Note: libOpenCL.so is not included here. Please compile it yourself, for example try: https://github.com/leejet/stable-diffusion.cpp/commit/d73b419
