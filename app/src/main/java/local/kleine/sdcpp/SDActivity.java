@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class SDActivity extends AppCompatActivity {
 
@@ -65,9 +66,11 @@ public class SDActivity extends AppCompatActivity {
     private Activity myActivity;
     private String sdProgramPath, selectedModelfile, selectedSampler, selectedScheduler, taesdModel, taesdXLModel, helperPath,
             libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
-
+    private final String libVendorPath = "/vendor/lib64"; // no support possible for 32 bit with openCL
+    private final static String ChklibopenCL = "libchkopenCL.so";
     private final static String SDlibopenCL = "libsdopenCL.so";
     private final static String SDlib = "libsd.so";
+    private File nativeLibDir;
     private final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
             getAbsolutePath();
@@ -305,18 +308,19 @@ public class SDActivity extends AppCompatActivity {
             }
             return;
         }
+        nativeLibDir = new File(getApplicationInfo().nativeLibraryDir);
         boolean canUseOpenCL = false;
-        final File nativeLibDir = new File(getApplicationInfo().nativeLibraryDir);
-        final String[] libs = nativeLibDir.list();
-        if (libs != null) {
-            for (String lib : libs) {
-                if (lib.equals(SDlibopenCL)) {
-                    canUseOpenCL = true;
-                    break;
+        if (checkOpenCLdriver()) {
+            final String[] libs = nativeLibDir.list();
+            if (libs != null) {
+                for (String lib : libs) {
+                    if (lib.equals(SDlibopenCL)) {
+                        canUseOpenCL = true;
+                        break;
+                    }
                 }
             }
         }
-
         setupLogWindow();
         promptEditor = findViewById(R.id.stringprompt);
         promptEditor.addTextChangedListener(createTextWatcher());
@@ -414,7 +418,7 @@ public class SDActivity extends AppCompatActivity {
             // we can use arguments.add() even if overwriting an earlier argument, no problem for sd.cpp,
             // and we can overwrite earlier arguments by using optionsEditor's contents (at the end of list)
             libPath = nativeLibDir.toString();      // get openCL libs
-            String libVendorPath = "/vendor/lib64"; // no support possible for 32 bit with openCL
+
             String tempFolderPath;
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
@@ -811,11 +815,26 @@ public class SDActivity extends AppCompatActivity {
         }
     }
 
-   /* @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private boolean checkOpenCLdriver() {
+        Process process;
+        boolean result = false;
+        File file = new File(nativeLibDir, ChklibopenCL);
+        if (!(file.exists() && file.length() > 0)) {
+            Toast.makeText(myActivity, ChklibopenCL + " not found,\nplease rebuild this app", Toast.LENGTH_SHORT).show();
+        } else {
+            try {
+                ProcessBuilder processBuilder = new ProcessBuilder(
+                        new ArrayList<>(Collections.singletonList(file.getAbsolutePath())));
+                Map<String, String> environment = processBuilder.environment();
+                environment.put("LD_LIBRARY_PATH", libVendorPath);
+                processBuilder.redirectErrorStream(true);
+                process = processBuilder.start();
+                result = process.waitFor() == 0;
+            } catch (Exception ignored) {
+            }
+        }
+        return result;
     }
-    //*/
 
     final public void processInfo(String info) {
         final Process process = (sd_thread == null) ? null : sd_thread.process;
@@ -853,7 +872,7 @@ public class SDActivity extends AppCompatActivity {
             if (parent.getId() == R.id.model_spinner) {
                 selectedModelfile = fileList.get(position);
                 // here follow some lazy checks for easy defaults - just for the moment
-                // ** ToDo ** : better use some receipes, just like this example:
+                // ** T o D o ** : better use some receipes, just like this example:
                 // https://github.com/leejet/stable-diffusion.cpp/blob/master/examples/server/recipes/sdxs.json
                 if (selectedModelfile.toUpperCase().contains("SDXS")
                         || selectedModelfile.toUpperCase().contains("STAR")
@@ -955,6 +974,11 @@ public class SDActivity extends AppCompatActivity {
         super.onStop();
         if (process != null)
             processInfo(null, "onStop");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 */
 }
