@@ -531,6 +531,10 @@ public class SDActivity extends AppCompatActivity {
             myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
             vm.setBitmap(myBitmap);
         }
+        if (myBitmap == null) {
+            Toast.makeText(myActivity, "Cannot decode image: " + sd_thread.outputImagePath.substring(sdWorkPath.length() + 1), Toast.LENGTH_SHORT).show();
+            return;
+        }
         int bh = myBitmap.getHeight();
         int bw = myBitmap.getWidth();
         DisplayMetrics dm = getResources().getDisplayMetrics();
