@@ -93,13 +93,14 @@ After compiling rename the executables from 'sd' or 'sd-cli' to 'libsd.so' and p
 
 ## Optional use of an openCL driver:
 
-At first get a current commit from https://github.com/leejet/stable-diffusion.cpp and read more about using openCL (for Adreno GPU) here: https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md
-Then change the above script to:
+**IMPORTANT**: this project contains compiled code from sd.cpp (```stable-diffusion.cpp```), see here: https://github.com/leejet/stable-diffusion.cpp/commit/a0c8508 .
+As mentioned you are encouraged to build the sd-cli executable yourself.  At first get a current commit from https://github.com/leejet/stable-diffusion.cpp and read more about using openCL (for Adreno GPU) here: https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md . Then change the above script to:
+
 ```sh
 cmake .. -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE=/data/data/com.termux/files/home/android-ndk-r27b/build/cmake/android.toolchain.cmake \
   -DANDROID_PLATFORM=android-28 \
-  -DANDROID_ABI=arm64-v8a  # for 32 bit use: armeabi-v7a \
+  -DANDROID_ABI=arm64-v8a \
   -DGGML_OPENMP=OFF \
   -DSD_OPENCL=ON
 
@@ -107,6 +108,7 @@ ninja
 cd bin
 strip sd-cli
 # patchelf --replace-needed libOpenCL.so.1 libOpenCL.so sd-cli
+mv sd-cli libsdopenCL.so
 ```
 
 After compiling rename the executable from 'sd-cli' to 'libsdopenCL.so' and place it near to 'libsd.so' . During execution, this app searches for a file named 'libsdopenCL.so' and suggest using it.
