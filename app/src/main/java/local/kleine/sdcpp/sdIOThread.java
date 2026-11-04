@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 class sdIOThread extends Thread implements Runnable {
@@ -94,10 +95,20 @@ class sdIOThread extends Thread implements Runnable {
         }
     }
 
+    private static void makeDelay() {
+        // close button calls finish() too early
+        // and toast doesn't have time to display
+        try {
+            Thread.sleep(500);
+        } catch (Exception ignored) {
+        }
+    }
+
     @Override
     public void run() {
         if (process != null) {
             isRunning = true;
+            long t0 = System.currentTimeMillis();
             myActivity.addScreenDimmer();
             myActivity.lockScreenOn();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -110,23 +121,25 @@ class sdIOThread extends Thread implements Runnable {
                     }
                 }
                 if (process != null) {
-                    myActivity.subFinished(process.waitFor(), "");
+                    int exitCode = process.waitFor();
+                    if (exitCode != 0) {
+                        myActivity.subFinished(exitCode, "");
+                    } else {
+                        int t = Math.max(0, (int)((System.currentTimeMillis() - t0) / 1000));
+                        String msg = (t < 60) ? String.format(Locale.getDefault(), "%d seconds taken", t)
+                                : (t < 3600) ? String.format(Locale.getDefault(), "%d min %02d sec taken", t / 60, t % 60)
+                                : String.format(Locale.getDefault(), "%dh %02dm %02ds taken", t / 3600, (t / 60) % 60, t % 60);
+                        myActivity.subFinished(exitCode, msg);
+                        debugMsg(msg);
+                    }
                     wasNotInterrupted = true;
                 } else {
                     myActivity.subFinished(0, "cancelled");
-                    // close button calls finish() too early
-                    // and toast doesn't have time to display
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception ignored) {
-                    }
+                    makeDelay();
                 }
             } catch (java.io.IOException e) {
                 myActivity.subFinished(0, "cancelled");
-                try {
-                    Thread.sleep(500);
-                } catch (Exception ignored) {
-                }
+                makeDelay();
             } catch (Exception e) {
                 myActivity.subFinished(0, "exception during SD execution: " + e.getMessage());
             } finally {
