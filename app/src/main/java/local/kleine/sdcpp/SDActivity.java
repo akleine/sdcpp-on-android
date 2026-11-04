@@ -74,6 +74,10 @@ public class SDActivity extends AppCompatActivity {
     private final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
             getAbsolutePath();
+    private final static String anySpace = /* Build.VERSION.SDK_INT < Build.VERSION_CODES.N ?
+                    "[\\s\\t\\n\\r\\f\\xA0\\x0B\\x85\\u1680\\u180e\\u2000-\\u200a\\u202f\\u205f\\u3000\\u2028\\u2029]" :  //*/
+            "\\s";
+
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor, optionsEditor;
     private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker;
@@ -406,8 +410,8 @@ public class SDActivity extends AppCompatActivity {
                     /* 11 12 */         "--embd-dir", embeddchecker.isChecked() ? helperPath : "",
                     /* 13 14 */         "--sampling-method", selectedSampler,
                     /* 15 16 */         "--taesd", taesdoption,
-                    /* 17 18 */         "--cfg-scale", check(cfgscaleEditor.getText().toString(), "7.0"),
-                    /* 19 20 */         "--seed", check(seedEditor.getText().toString(), "-1"),
+                    /* 17 18 */         "--cfg-scale", checkFloat(cfgscaleEditor.getText().toString(), "7.0"),
+                    /* 19 20 */         "--seed", checkInt(seedEditor.getText().toString(), "-1"),
                     /* 21 22 */         "--steps", checkSteps(stepsEditor.getText().toString(), "25"),
                     /* 23 24 */         "--width", checkDimension(widthEditor.getText().toString(), "512"),
                     /* 25 26 */         "--height", checkDimension(heightEditor.getText().toString(), "512"),
@@ -462,9 +466,6 @@ public class SDActivity extends AppCompatActivity {
             sdProgramPath = file.getAbsolutePath();
             arguments.set(0, sdProgramPath);
 
-            final String anySpace = /* Build.VERSION.SDK_INT < Build.VERSION_CODES.N ?
-                    "[\\s\\t\\n\\r\\f\\xA0\\x0B\\x85\\u1680\\u180e\\u2000-\\u200a\\u202f\\u205f\\u3000\\u2028\\u2029]" :  //*/
-                    "[\\h\\v\\s]";
             String[] args = optionsEditor.getText().toString()
                     // trim*trim
                     .replaceAll("(^" + anySpace + "+)|(" + anySpace + "+$)", "")
@@ -732,7 +733,7 @@ public class SDActivity extends AppCompatActivity {
     }
 
     private String checkDimension(String input, @SuppressWarnings("SameParameterValue") String def) {
-        input = input.replaceAll("\\s", "");
+        input = input.replaceAll(anySpace, "");
         if (!input.isEmpty()) {
             try {
                 int number = Integer.parseInt(input);
@@ -745,7 +746,7 @@ public class SDActivity extends AppCompatActivity {
     }
 
     private String checkSteps(String input, @SuppressWarnings("SameParameterValue") String def) {
-        input = input.replaceAll("\\s", "");
+        input = input.replaceAll(anySpace, "");
         if (!input.isEmpty()) {
             try {
                 int number = Integer.parseInt(input);
@@ -757,11 +758,23 @@ public class SDActivity extends AppCompatActivity {
         return def;
     }
 
-    private String check(String input, @SuppressWarnings("SameParameterValue") String def) {
-        input = input.replaceAll("\\s", "");
+    private String checkInt(String input, @SuppressWarnings("SameParameterValue") String def) {
+        input = input.replaceAll(anySpace, "");
         if (!input.isEmpty()) {
             try {
                 Integer.parseInt(input);
+                return input;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return def;
+    }
+
+    private String checkFloat(String input, @SuppressWarnings("SameParameterValue") String def) {
+        input = input.replaceAll(anySpace, "");
+        if (!input.isEmpty()) {
+            try {
+                Float.parseFloat(input);
                 return input;
             } catch (NumberFormatException ignored) {
             }
