@@ -568,11 +568,12 @@ public class SDActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     Toast.makeText(myActivity, "Error writing logfile", Toast.LENGTH_SHORT).show();
                 }
+                Toast.makeText(myActivity, msg, Toast.LENGTH_LONG).show();  // success, display time
                 displayResultImageFile(file);
-
             } else {
-                String errMsg = !msg.isEmpty() ? msg
-                        : (exitcode == 0 && !file.exists()) ? "Result image not found"
+                // image doesn't exist or non-zero exit code
+                String errMsg = !msg.isEmpty() ? msg  // error or interrupt
+                        : (exitcode == 0) ? "Result image not found"  // condition with image was checked earlier
                         : "SD process failed with code: " + exitcode;
                 Toast.makeText(myActivity, errMsg, Toast.LENGTH_SHORT).show();
             }
