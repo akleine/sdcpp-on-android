@@ -66,7 +66,7 @@ public class SDActivity extends AppCompatActivity {
     private Activity myActivity;
     private String sdProgramPath, selectedModelfile, selectedSampler, selectedScheduler, taesdModel, taesdXLModel, helperPath,
             libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
-    private final String libVendorPath = "/vendor/lib64"; // no support possible for 32 bit with openCL
+    private final static String libVendorPath = "/vendor/lib64";  // no support possible for 32 bit with openCL
     private final static String ChklibopenCL = "libchkopenCL.so";
     private final static String SDlibopenCL = "libsdopenCL.so";
     private final static String SDlib = "libsd.so";
@@ -830,13 +830,15 @@ public class SDActivity extends AppCompatActivity {
     }
 
     private boolean checkOpenCLdriver() {
-        Process process;
-        boolean result = false;
         File file = new File(nativeLibDir, ChklibopenCL);
         if (!(file.exists() && file.length() > 0)) {
-            Toast.makeText(myActivity, ChklibopenCL + " not found,\nplease rebuild this app", Toast.LENGTH_SHORT).show();
+            // no autodetection library found, allow to select
+            // OpenCL version manually if present
+            return true;
         } else {
+            boolean result = false;
             try {
+                Process process;
                 ProcessBuilder processBuilder = new ProcessBuilder(
                         new ArrayList<>(Collections.singletonList(file.getAbsolutePath())));
                 Map<String, String> environment = processBuilder.environment();
@@ -846,8 +848,8 @@ public class SDActivity extends AppCompatActivity {
                 result = process.waitFor() == 0;
             } catch (Exception ignored) {
             }
+            return result;
         }
-        return result;
     }
 
     final public void processInfo(String info) {
