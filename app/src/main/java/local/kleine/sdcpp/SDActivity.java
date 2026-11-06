@@ -346,7 +346,6 @@ public class SDActivity extends AppCompatActivity {
         setupEditText(widthEditor);
         heightEditor = findViewById(R.id.stringheight);
         setupEditText(heightEditor);
-        //seedEditor = findViewById(R.id.stringseed);
         cfgscaleEditor = findViewById(R.id.stringcfgscale);
         setupEditText(cfgscaleEditor);
         Button submitButton = findViewById(R.id.submitButton);
