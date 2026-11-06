@@ -1,10 +1,34 @@
 package local.kleine.sdcpp;
 
+import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import androidx.lifecycle.ViewModel;
+import android.preference.PreferenceManager;
+import androidx.lifecycle.AndroidViewModel;
 
-public class SDViewModel extends ViewModel {
+public class SDViewModel extends AndroidViewModel {
+    public static final String prefsKeyPrompt    = "prefs_prompt";
+    public static final String prefsKeyNegPrompt = "prefs_neg_prompt";
+    public static final String prefsKeyOptions   = "prefs_options";
+    public static final String prefsKeySteps     = "prefs_steps";
+    public static final String prefsKeySeed      = "prefs_seed";
+    public static final String prefsKeyWidth     = "prefs_width";
+    public static final String prefsKeyHeight    = "prefs_height";
+    public static final String prefsKeyCfgScale  = "prefs_cfgscale";
+    private final SharedPreferences prefs;
+    private final SharedPreferences.Editor prefsEditor;
+    private boolean prefsChanged = false;
     private Bitmap _image = null;
+
+    public SDViewModel (Application app) {
+        super(app);
+        prefs = app.getSharedPreferences(
+                PreferenceManager.getDefaultSharedPreferencesName(app),
+                Context.MODE_PRIVATE);
+        prefsEditor = prefs.edit();
+    }
+
     public Bitmap getBitmap() {
         return (_image == null || _image.isRecycled()) ? null : _image;
     }
@@ -21,6 +45,39 @@ public class SDViewModel extends ViewModel {
             if (!_image.isRecycled())
                 _image.recycle();
             _image = null;
+        }
+        savePreferences();
+    }
+
+    public void savePreferences () {
+        if (prefsChanged && prefsEditor != null && prefsEditor.commit())
+            prefsChanged = false;
+    }
+
+    public String getPrefString(String prefName, String defValue) {
+        String value;
+        try {
+            value = prefs.getString(prefName, defValue);
+        } catch (Exception ignored) {
+            prefsEditor.remove(prefName);
+            prefsChanged = true;
+            value = defValue;
+        }
+        return value;
+    }
+
+    public void setPrefString(String prefName, String value) {
+        String old;
+        try {
+            old = prefs.getString(prefName, "");
+        } catch (Exception ignored) {
+            prefsEditor.remove(prefName);
+            prefsChanged = true;
+            old = "";
+        }
+        if (!old.equals(value)) {
+            prefsEditor.putString(prefName, value);
+            prefsChanged = true;
         }
     }
 }
