@@ -67,15 +67,19 @@ public class SDViewModel extends AndroidViewModel {
     }
 
     public void setPrefString(String prefName, String value) {
-        String old;
-        try {
-            old = prefs.getString(prefName, "");
-        } catch (Exception ignored) {
-            prefsEditor.remove(prefName);
-            prefsChanged = true;
-            old = "";
+        boolean needWrite = !prefs.contains(prefName);  // force write 1st time
+        if (!needWrite) {
+            String old;
+            try {
+                old = prefs.getString(prefName, "");
+            } catch (Exception ignored) {
+                prefsEditor.remove(prefName);
+                prefsChanged = true;
+                old = "";
+            }
+            needWrite = !old.equals(value);
         }
-        if (!old.equals(value)) {
+        if (needWrite) {
             prefsEditor.putString(prefName, value);
             prefsChanged = true;
         }
