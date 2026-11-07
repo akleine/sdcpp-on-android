@@ -56,6 +56,8 @@ public class SDViewModel extends AndroidViewModel {
         try {
             value = prefs.getString(prefName, defValue);
         } catch (Exception ignored) {
+            // deleting erroneous element and returning default
+            // as if it doesn't exist
             prefsEditor.remove(prefName);
             prefsChanged = true;
             value = defValue;
@@ -66,15 +68,14 @@ public class SDViewModel extends AndroidViewModel {
     public void setPrefString(String prefName, String value) {
         boolean needWrite = !prefs.contains(prefName);  // force write 1st time
         if (!needWrite) {
-            String old;
             try {
-                old = prefs.getString(prefName, "");
+                needWrite = !prefs.getString(prefName, "").equals(value);
             } catch (Exception ignored) {
+                // something was wrong, clearing old value
+                // and resetting it from scratch
                 prefsEditor.remove(prefName);
-                prefsChanged = true;
-                old = "";
+                needWrite = true;
             }
-            needWrite = !old.equals(value);
         }
         if (needWrite) {
             prefsEditor.putString(prefName, value);
