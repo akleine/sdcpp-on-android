@@ -985,10 +985,8 @@ public class SDActivity extends AppCompatActivity {
 
         // saving content with editFocusListener
         View v = getCurrentFocus();
-        if (v != null && editsMap.get(v.getId()) != null) {  // known EditText
-            v.setFocusable(false);
-            v.setFocusable(true);
-        }
+        if (v != null && editsMap.get(v.getId()) != null)  // known EditText
+            v.clearFocus();
         vm.savePreferences();
     }
 
