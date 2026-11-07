@@ -1,10 +1,9 @@
 package local.kleine.sdcpp;
 
 import android.app.Application;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import androidx.lifecycle.AndroidViewModel;
 
 public class SDViewModel extends AndroidViewModel {
@@ -23,9 +22,7 @@ public class SDViewModel extends AndroidViewModel {
 
     public SDViewModel (Application app) {
         super(app);
-        prefs = app.getSharedPreferences(
-                PreferenceManager.getDefaultSharedPreferencesName(app),
-                Context.MODE_PRIVATE);
+        prefs = PreferenceManager.getDefaultSharedPreferences(app);
         prefsEditor = prefs.edit();
     }
 
