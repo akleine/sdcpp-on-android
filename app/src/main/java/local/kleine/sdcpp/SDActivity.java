@@ -723,6 +723,12 @@ public class SDActivity extends AppCompatActivity {
 
     public void updateLogView() {
         runOnUiThread(() -> {
+// Synchronization takes ~8 times more microseconds (300 => 2400 per output line)
+// and needed only if ConcurrentModificationException
+// or IndexOutOfBoundsException exceptions occur.
+// They should not happen because stdout read cycle
+// waits for readline() and has enough time to copy values to logList
+//            synchronized (sd_thread.outputArrayList) {
             int countA = logList.size();
             int countL = sd_thread.outputArrayList.size();
             boolean doUpdate = false;
@@ -735,13 +741,15 @@ public class SDActivity extends AppCompatActivity {
                 }
             }
             if (countL > countA) {
-                logList.addAll(sd_thread.outputArrayList.subList(countA, countL));
+                for (int lastA = countA; lastA < countL; lastA++)
+                    logList.add(sd_thread.outputArrayList.get(lastA));
                 doUpdate = true;
             }
             if (doUpdate) {
                 arrayAdapter.notifyDataSetChanged();
                 sdLogView.setSelection(countL - 1);
             }
+//            }  // synchronized
         });
     }
 
