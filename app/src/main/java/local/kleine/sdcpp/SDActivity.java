@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +64,7 @@ public class SDActivity extends AppCompatActivity {
     private SDViewModel vm = null;
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
-    private Activity myActivity;
+    private final Activity myActivity;
     private String sdProgramPath, selectedModelfile, selectedSampler, selectedScheduler, taesdModel, taesdXLModel, helperPath,
             libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
     private final static String libVendorPath = "/vendor/lib64";  // no support possible for 32 bit with openCL
@@ -136,10 +137,14 @@ public class SDActivity extends AppCompatActivity {
     private static final int SGM_POS = 5;
     private List<String> fileList, samplerList, schedulerList;
 
+    public SDActivity() {
+        super();
+        myActivity = this;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        myActivity = this;
         vm = new ViewModelProvider(this).get(SDViewModel.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
                 && !Environment.isExternalStorageManager()) {
@@ -327,15 +332,22 @@ public class SDActivity extends AppCompatActivity {
         }
         setupLogWindow();
         promptEditor = findViewById(R.id.stringprompt);
+        setupEditText(promptEditor);
         promptEditor.addTextChangedListener(createTextWatcher());
         negativeEditor = findViewById(R.id.stringnegprompt);
+        setupEditText(negativeEditor);
         optionsEditor = findViewById(R.id.stringopt);
+        setupEditText(optionsEditor);
         stepsEditor = findViewById(R.id.stringsteps);
+        setupEditText(stepsEditor);
         seedEditor = findViewById(R.id.stringseed);
+        setupEditText(seedEditor);
         widthEditor = findViewById(R.id.stringwidth);
+        setupEditText(widthEditor);
         heightEditor = findViewById(R.id.stringheight);
-        seedEditor = findViewById(R.id.stringseed);
+        setupEditText(heightEditor);
         cfgscaleEditor = findViewById(R.id.stringcfgscale);
+        setupEditText(cfgscaleEditor);
         Button submitButton = findViewById(R.id.submitButton);
 
         fileList = listExternalFiles(sdWorkPath);
@@ -954,17 +966,52 @@ public class SDActivity extends AppCompatActivity {
         }
     }
 
-/*
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        processInfo(null, "onSaveInstanceState");
-        super.onSaveInstanceState(outState);
+    final private static Map<Integer, String> editsMap = new HashMap<>();
+    static {
+        editsMap.put(R.id.stringprompt,    SDViewModel.prefsKeyPrompt);
+        editsMap.put(R.id.stringnegprompt, SDViewModel.prefsKeyNegPrompt);
+        editsMap.put(R.id.stringopt,       SDViewModel.prefsKeyOptions);
+        editsMap.put(R.id.stringsteps,     SDViewModel.prefsKeySteps);
+        editsMap.put(R.id.stringseed,      SDViewModel.prefsKeySeed);
+        editsMap.put(R.id.stringwidth,     SDViewModel.prefsKeyWidth);
+        editsMap.put(R.id.stringheight,    SDViewModel.prefsKeyHeight);
+        editsMap.put(R.id.stringcfgscale,  SDViewModel.prefsKeyCfgScale);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        processInfo(null, "onPause");
+        //processInfo("onPause");
+
+        // saving content with editFocusListener
+        View v = getCurrentFocus();
+        if (v != null && editsMap.get(v.getId()) != null)  // known EditText
+            v.clearFocus();
+        vm.savePreferences();
+    }
+
+    private void setupEditText(EditText editText) {
+        String key = editsMap.get(editText.getId());
+        String to = editText.getText().toString();
+        String tn = vm.getPrefString(key, to);
+        if (!tn.equals(to))
+            editText.setText(tn);
+        editText.setOnFocusChangeListener(editFocusListener);
+    }
+
+    final View.OnFocusChangeListener editFocusListener = (v, hasFocus) -> {
+        if (!hasFocus) {
+            String key = editsMap.get(v.getId());
+            if (key != null)  // known EditText
+                vm.setPrefString(key, ((EditText)v).getText().toString());
+        }
+    };
+
+/*
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        processInfo(null, "onSaveInstanceState");
+        super.onSaveInstanceState(outState);
     }
 
     @Override
