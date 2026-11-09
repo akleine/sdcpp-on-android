@@ -76,11 +76,18 @@ class sdIOThread extends Thread implements Runnable {
             return false;  // nothing changed
         }
         boolean isProgressBar = text.startsWith("  |");
+// Synchronization takes ~8 times more microseconds (300 => 2400 per output line)
+// and needed only if ConcurrentModificationException
+// or IndexOutOfBoundsException exceptions occur.
+// They should not happen because stdout read cycle
+// waits for readline() and has enough time to copy values to logList
+//            synchronized (outputArrayList) {
         if (!isProgressBar || !lastProgressBar) {
             outputArrayList.add(text);  // new line or start of bar
         } else {
             outputArrayList.set(outputArrayList.size() - 1, text);  // update the bae in same line
         }
+//            }  // synchronized
         lastProgressBar = isProgressBar;
         lastMsg = text;
         return true;
