@@ -473,7 +473,18 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--diffusion-conv-direct");
                 arguments.add("--vae-conv-direct");
                 arguments.add("--type");
-                arguments.add("q4_0");  // "f16"; = optimal for huge VRAM
+                arguments.add(selectedModelfile.toUpperCase().contains("SDXS") ? "f16" : "q4_0");
+                // "f16" is optimal for huge VRAM or very small models like SDXS
+                if (selectedModelfile.toUpperCase().contains("MINIT2I")) {
+                    arguments.set(1, "--diffusion-model"); // replace "-m"
+                    if (!helperPath.isEmpty()) {
+                        arguments.add("--t5xxl");
+                        arguments.add(helperPath + "/minit2i-text-encoder.safetensors");
+                        // hard wired as *initial approach* for MiniT2I experiments
+                        arguments.add("--type");
+                        arguments.add("f32");
+                    }
+                }
             }
             File file = new File(nativeLibDir, sdFileName);
             if (!(file.exists() && file.length() > 0)) {
@@ -484,7 +495,6 @@ public class SDActivity extends AppCompatActivity {
             }
             sdProgramPath = file.getAbsolutePath();
             arguments.set(0, sdProgramPath);
-
             String[] args = optionsEditor.getText().toString()
                     // trim*trim
                     .replaceAll("(^" + anySpace + "+)|(" + anySpace + "+$)", "")
