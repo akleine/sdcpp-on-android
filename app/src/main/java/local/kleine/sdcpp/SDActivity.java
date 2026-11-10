@@ -134,7 +134,8 @@ public class SDActivity extends AppCompatActivity {
             "beta",
             "llada_image",
     };
-    private static final int SGM_POS = 5;
+    private static final int POS_DISCRETE = 0;
+    private static final int POS_SGM_UNI = 5;
     private List<String> fileList, samplerList, schedulerList;
 
     public SDActivity() {
@@ -434,8 +435,14 @@ public class SDActivity extends AppCompatActivity {
             // we can use arguments.add() even if overwriting an earlier argument, no problem for sd.cpp,
             // and we can overwrite earlier arguments by using optionsEditor's contents (at the end of list)
             libPath = nativeLibDir.toString();      // get openCL libs
-
             String tempFolderPath;
+            if (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ||
+                    selectedModelfile.toUpperCase().contains("DIFF-INSTRUCTSTAR")) {
+                arguments.add("--timestep-shift");
+                arguments.add(selectedModelfile.toUpperCase().contains("NITRO") ? "250" : "400");
+                arguments.add("--auto-fit");
+                arguments.add("off");
+            }
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
                 tempFolderPath = "";
@@ -489,23 +496,24 @@ public class SDActivity extends AppCompatActivity {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(localOutputImagePath + ".sh"));
                 args = arguments.toArray(args).clone();  // always expanded
                 if (libPath.contains(libVendorPath)) {
-                    args[0] = "LD_LIBRARY_PATH=" + libVendorPath + " sd \\\n";
+                    args[0] = "LD_LIBRARY_PATH=" + libVendorPath + " sd-cli";
                 } else {
-                    args[0] = "sd \\\n";
+                    args[0] = "sd";
                 }
                 args[4] = "\"" + args[4]
                         .replace("\\", "\\\\")
                         .replace("\"", "\\\"")
-                        + "\" \\\n";  // prompt
+                        + "\"";  // prompt
                 args[6] = "\"" + args[6]
                         .replace("\\", "\\\\")
                         .replace("\"", "\\\"")
-                        + "\" \\\n";  // negative prompt
-                args[8] = "output.jpg \\\n";
+                        + "\"";  // negative prompt
+                args[8] = "output.jpg";
                 args[10] = "\"" + args[10] + "\"";
                 args[12] = "\"" + args[12] + "\"";
                 args[16] = "\"" + args[16] + "\"";
                 String cmdline = String.join(" ", args);
+                cmdline = cmdline.replaceAll("\\s+(?=-)", " \\\\\n");
                 writer.write(cmdline);
                 writer.close();
             } catch (IOException e) {
@@ -900,7 +908,6 @@ public class SDActivity extends AppCompatActivity {
         };
     }
 
-
     public class ItemSelectedListener implements AdapterView.OnItemSelectedListener {
         @SuppressLint("SetTextI18n")
         @Override
@@ -915,15 +922,9 @@ public class SDActivity extends AppCompatActivity {
                         || selectedModelfile.toUpperCase().contains("NITRO")) {
                     stepsEditor.setText("1");
                     cfgscaleEditor.setText("1");
-                    if (selectedModelfile.toUpperCase().contains("STAR")
-                            || selectedModelfile.toUpperCase().contains("NITRO")) {
-                        scheduler_spinner.setSelection(SGM_POS);
-                        String options = optionsEditor.getText().toString();
-                        // openCL is better without "--fa" here
-                        options = options.replace("--fa", "");
-                        optionsEditor.setText(options + " --timestep-shift "
-                                + (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ? "250" : "400"));
-                    }
+                    scheduler_spinner.setSelection(selectedModelfile.toUpperCase().contains("SDXS") ? POS_DISCRETE : POS_SGM_UNI);
+                }
+                if (selectedModelfile.toUpperCase().contains("SDXS")) {
                     taesdXLchecker.setChecked(false);
                     taesdchecker.setChecked(false);
                 } else {
@@ -975,15 +976,16 @@ public class SDActivity extends AppCompatActivity {
     }
 
     final private static Map<Integer, String> editsMap = new HashMap<>();
+
     static {
-        editsMap.put(R.id.stringprompt,    SDViewModel.prefsKeyPrompt);
+        editsMap.put(R.id.stringprompt, SDViewModel.prefsKeyPrompt);
         editsMap.put(R.id.stringnegprompt, SDViewModel.prefsKeyNegPrompt);
-        editsMap.put(R.id.stringopt,       SDViewModel.prefsKeyOptions);
-        editsMap.put(R.id.stringsteps,     SDViewModel.prefsKeySteps);
-        editsMap.put(R.id.stringseed,      SDViewModel.prefsKeySeed);
-        editsMap.put(R.id.stringwidth,     SDViewModel.prefsKeyWidth);
-        editsMap.put(R.id.stringheight,    SDViewModel.prefsKeyHeight);
-        editsMap.put(R.id.stringcfgscale,  SDViewModel.prefsKeyCfgScale);
+        editsMap.put(R.id.stringopt, SDViewModel.prefsKeyOptions);
+        editsMap.put(R.id.stringsteps, SDViewModel.prefsKeySteps);
+        editsMap.put(R.id.stringseed, SDViewModel.prefsKeySeed);
+        editsMap.put(R.id.stringwidth, SDViewModel.prefsKeyWidth);
+        editsMap.put(R.id.stringheight, SDViewModel.prefsKeyHeight);
+        editsMap.put(R.id.stringcfgscale, SDViewModel.prefsKeyCfgScale);
     }
 
     @Override
@@ -1011,7 +1013,7 @@ public class SDActivity extends AppCompatActivity {
         if (!hasFocus) {
             String key = editsMap.get(v.getId());
             if (key != null)  // known EditText
-                vm.setPrefString(key, ((EditText)v).getText().toString());
+                vm.setPrefString(key, ((EditText) v).getText().toString());
         }
     };
 
