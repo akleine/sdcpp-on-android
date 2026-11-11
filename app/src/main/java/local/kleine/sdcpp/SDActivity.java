@@ -309,8 +309,8 @@ public class SDActivity extends AppCompatActivity {
             addScreenDimmer();
             if (sd_thread.process != null)
                 lockScreenOn();  // still running, prevent sleeping
-            closeButton.setOnClickListener(cancelGenerationListener);
             sd_thread.updateActivity((SDActivity) myActivity);
+            closeButton.setOnClickListener(cancelGenerationListener);
             File file = new File(sd_thread.outputImagePath);
             if (file.exists()) {
                 imageOutputView.setVisibility(View.VISIBLE);
