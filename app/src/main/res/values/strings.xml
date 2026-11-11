@@ -29,4 +29,6 @@
     <string name="options" translatable="false">--fa</string>
     <string name="application_settings">Write permissions were rejected, please grant them in application settings</string>
     <string name="can_not_run_sd_process">"can not run SD process: "</string>
+    <string name="write_cmdline">write cmdline</string>
+    <string name="write_log">write log</string>
 </resources>
