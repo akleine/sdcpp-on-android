@@ -92,7 +92,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="false"
-                android:enabled="false"
+                android:enabled="true"
                 android:text="@string/field_gpu"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -111,7 +111,7 @@
                     android:id="@+id/lorapath"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
 
                 <CheckBox
                     android:id="@+id/embeddchecker"
@@ -158,7 +158,7 @@
                     android:layout_weight="1"
                     android:paddingBottom="6dp"
                     android:paddingRight="6dp"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
 
                 <TextView
                     android:id="@+id/taesdXLmodel"
@@ -167,7 +167,7 @@
                     android:layout_weight="1"
                     android:paddingBottom="6dp"
                     android:paddingLeft="6dp"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
             </LinearLayout>
 
             <LinearLayout
