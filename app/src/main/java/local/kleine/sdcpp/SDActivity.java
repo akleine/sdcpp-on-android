@@ -81,7 +81,7 @@ public class SDActivity extends AppCompatActivity {
 
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor, optionsEditor;
-    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker;
+    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker;
     private View wrapperView;
     private ListView sdLogView;
     private View coverView;
@@ -305,9 +305,9 @@ public class SDActivity extends AppCompatActivity {
         if (sd_thread != null) {
             // SD.cpp is launched or was finished, displaying the log
             setupLogWindow();
-            wrapperView.setVisibility(View.GONE);
+            wrapperView.setVisibility(View.GONE);  // hide settings
             addScreenDimmer();
-            if (sd_thread != null && sd_thread.process != null)
+            if (sd_thread.process != null)
                 lockScreenOn();  // still running, prevent sleeping
             closeButton.setOnClickListener(cancelGenerationListener);
             sd_thread.updateActivity((SDActivity) myActivity);
@@ -377,29 +377,50 @@ public class SDActivity extends AppCompatActivity {
         scheduler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         scheduler_spinner.setAdapter(scheduler_adapter);
 
-        TextView taesdview = findViewById(R.id.taesdmodel);
-        if (!taesdModel.isEmpty()) {
+        // taesd checkboxes switch each other, therefore
+        // both references are needed before setup
+        taesdchecker = findViewById(R.id.taesdchecker);
+        taesdXLchecker = findViewById(R.id.taesdXLchecker);
+        setupCheckBox(taesdchecker, true);  // suggest by default
+        if (taesdModel.isEmpty()) {
+            // override user choice if Taesd is not available anymore
+            taesdchecker.setChecked(false);
+            taesdchecker.setEnabled(false);
+        } else {
+            TextView taesdview = findViewById(R.id.taesdmodel);
             taesdview.setText(taesdModel.substring(taesdModel.lastIndexOf('/') + 1) + "  (in lora path)");
         }
-        TextView taesdXLview = findViewById(R.id.taesdXLmodel);
-        if (!taesdXLModel.isEmpty()) {
+        setupCheckBox(taesdXLchecker, true);  // suggest by default
+        if (taesdXLModel.isEmpty()) {
+            // override user choice if TaesdXL is not available anymore
+            taesdXLchecker.setChecked(false);
+            taesdXLchecker.setEnabled(false);
+        } else {
+            TextView taesdXLview = findViewById(R.id.taesdXLmodel);
             taesdXLview.setText(taesdXLModel.substring(taesdXLModel.lastIndexOf('/') + 1) + "  (in lora path)");
         }
-        taesdchecker = findViewById(R.id.taesdchecker);
-        taesdchecker.setOnCheckedChangeListener(new onCheckedChangeListener());
-        taesdXLchecker = findViewById(R.id.taesdXLchecker);
-        taesdXLchecker.setOnCheckedChangeListener(new onCheckedChangeListener());
-        taesdchecker.setEnabled(!taesdModel.isEmpty());
-        taesdXLchecker.setEnabled(!taesdXLModel.isEmpty());
         embeddchecker = findViewById(R.id.embeddchecker);
-        embeddchecker.setEnabled(!helperPath.isEmpty());
+        setupCheckBox(embeddchecker, false);  // disable embeddings by default
+        if (helperPath.isEmpty()) {
+            taesdXLchecker.setChecked(false);
+            taesdXLchecker.setEnabled(false);
+        }
         gpuchecker = findViewById(R.id.usegpu);
-        gpuchecker.setChecked(canUseOpenCL);
-        gpuchecker.setEnabled(canUseOpenCL);
+        setupCheckBox(gpuchecker, true);  // enable GPU by default
+        if (!canUseOpenCL) {
+            gpuchecker.setChecked(false);
+            gpuchecker.setEnabled(false);
+        }
+        writeCmdlineChecker = findViewById(R.id.writecmdchecker);
+        setupCheckBox(writeCmdlineChecker, true);  // write command script by default
+        CheckBox writeLogChecker = findViewById(R.id.writelogchecker);
+        setupCheckBox(writeLogChecker, true);  // save log by default
+
         TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
         submitButton.setOnClickListener(v -> {
             wrapperView.setVisibility(View.GONE);
+            vm.savePreferences();
             String prompt = promptEditor.getText().toString();
             if (prompt.isEmpty()) {
                 prompt = "something";
@@ -502,32 +523,34 @@ public class SDActivity extends AppCompatActivity {
                     .split(anySpace + "+(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
             if (!args[0].isEmpty()) arguments.addAll(Arrays.asList(args));
 
-            try {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(localOutputImagePath + ".sh"));
-                args = arguments.toArray(args).clone();  // always expanded
-                if (libPath.contains(libVendorPath)) {
-                    args[0] = "LD_LIBRARY_PATH=" + libVendorPath + " sd-cli";
-                } else {
-                    args[0] = "sd";
+            if (writeCmdlineChecker.isChecked()) {
+                try {
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(localOutputImagePath + ".sh"));
+                    args = arguments.toArray(args).clone();  // always expanded
+                    if (libPath.contains(libVendorPath)) {
+                        args[0] = "LD_LIBRARY_PATH=" + libVendorPath + " sd-cli";
+                    } else {
+                        args[0] = "sd";
+                    }
+                    args[4] = "\"" + args[4]
+                            .replace("\\", "\\\\")
+                            .replace("\"", "\\\"")
+                            + "\"";  // prompt
+                    args[6] = "\"" + args[6]
+                            .replace("\\", "\\\\")
+                            .replace("\"", "\\\"")
+                            + "\"";  // negative prompt
+                    args[8] = "output.jpg";
+                    args[10] = "\"" + args[10] + "\"";
+                    args[12] = "\"" + args[12] + "\"";
+                    args[16] = "\"" + args[16] + "\"";
+                    String cmdline = String.join(" ", args);
+                    cmdline = cmdline.replaceAll("\\s+(?=-)", " \\\\\n");
+                    writer.write(cmdline);
+                    writer.close();
+                } catch (IOException e) {
+                    Toast.makeText(myActivity, "Error writing cmdfile", Toast.LENGTH_SHORT).show();
                 }
-                args[4] = "\"" + args[4]
-                        .replace("\\", "\\\\")
-                        .replace("\"", "\\\"")
-                        + "\"";  // prompt
-                args[6] = "\"" + args[6]
-                        .replace("\\", "\\\\")
-                        .replace("\"", "\\\"")
-                        + "\"";  // negative prompt
-                args[8] = "output.jpg";
-                args[10] = "\"" + args[10] + "\"";
-                args[12] = "\"" + args[12] + "\"";
-                args[16] = "\"" + args[16] + "\"";
-                String cmdline = String.join(" ", args);
-                cmdline = cmdline.replaceAll("\\s+(?=-)", " \\\\\n");
-                writer.write(cmdline);
-                writer.close();
-            } catch (IOException e) {
-                Toast.makeText(myActivity, "Error writing cmdfile", Toast.LENGTH_SHORT).show();
             }
             if (sd_thread != null) {
                 try {
@@ -588,16 +611,18 @@ public class SDActivity extends AppCompatActivity {
             File file = new File(sd_thread.outputImagePath);
             if (exitcode == 0 && file.exists()) {
                 imageOutputView.setVisibility(View.VISIBLE);
-                StringBuilder sb = new StringBuilder();
-                for (String line : sd_thread.outputArrayList)
-                    sb.append(line).append("\n");
-                String alllog = sb.toString();
-                try {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(sd_thread.outputImagePath + ".log.txt"));
-                    writer.write(alllog);
-                    writer.close();
-                } catch (IOException e) {
-                    Toast.makeText(myActivity, "Error writing logfile", Toast.LENGTH_SHORT).show();
+                if (vm.getPrefBoolean(SDViewModel.prefsKeyLog, true)) {
+                    StringBuilder sb = new StringBuilder();
+                    for (String line : sd_thread.outputArrayList)
+                        sb.append(line).append("\n");
+                    String alllog = sb.toString();
+                    try {
+                        BufferedWriter writer = new BufferedWriter(new FileWriter(sd_thread.outputImagePath + ".log.txt"));
+                        writer.write(alllog);
+                        writer.close();
+                    } catch (IOException e) {
+                        Toast.makeText(myActivity, "Error writing logfile", Toast.LENGTH_SHORT).show();
+                    }
                 }
                 Toast.makeText(myActivity, msg, Toast.LENGTH_LONG).show();  // success, display time
                 displayResultImageFile(file);
@@ -871,7 +896,7 @@ public class SDActivity extends AppCompatActivity {
         File file = new File(nativeLibDir, ChklibopenCL);
         if (!(file.exists() && file.length() > 0)) {
             // no autodetection library found, allow to select
-            // OpenCL version manually if present
+            // OpenCL SD.cpp version manually if present
             return true;
         } else {
             boolean result = false;
@@ -946,11 +971,16 @@ public class SDActivity extends AppCompatActivity {
                         if (!taesdXLModel.isEmpty()) {
                             taesdXLchecker.setChecked(true);
                         }
-                    } else {
+                    }
+                    // if selected model doesn't have Taesd recommendations,
+                    // keep user current choice
+                    /*
+                    else {
                         if (!taesdModel.isEmpty()) {
                             taesdchecker.setChecked(true);
                         }
                     }
+                    //*/
                 }
             } else {
                 if (parent.getId() == R.id.sampler_spinner) {
@@ -970,19 +1000,42 @@ public class SDActivity extends AppCompatActivity {
         }
     }
 
-    public class onCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
+    final private static Map<Integer, String> checkboxesMap = new HashMap<>();
+
+    static {
+        checkboxesMap.put(R.id.usegpu, SDViewModel.prefsKeyGpu);
+        checkboxesMap.put(R.id.embeddchecker, SDViewModel.prefsKeyEmbed);
+        checkboxesMap.put(R.id.taesdchecker, SDViewModel.prefsKeyTaesd);
+        checkboxesMap.put(R.id.taesdXLchecker, SDViewModel.prefsKeyTaesdXL);
+        checkboxesMap.put(R.id.writecmdchecker, SDViewModel.prefsKeyCmd);
+        checkboxesMap.put(R.id.writelogchecker, SDViewModel.prefsKeyLog);
+    }
+
+    final private CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+            int id = compoundButton.getId();
             if (checked) {
-                if (compoundButton.getId() == R.id.taesdXLchecker) {
+                if (id == R.id.taesdXLchecker) {
                     taesdchecker.setChecked(false);
-                } else {
-                    if (compoundButton.getId() == R.id.taesdchecker) {
-                        taesdXLchecker.setChecked(false);
-                    }
+                } else if (id == R.id.taesdchecker) {
+                    taesdXLchecker.setChecked(false);
                 }
             }
+            String key = checkboxesMap.get(id);
+            if (key != null)  // known CheckBox
+                vm.setPrefBoolean(key, checked);
         }
+    };
+
+    private void setupCheckBox(CheckBox checkBox, boolean initValue) {
+        // initial setup, id-key pair must be defined in checkboxesMap
+        String key = checkboxesMap.get(checkBox.getId());
+        boolean current = checkBox.isChecked();
+        boolean needed = vm.prefKeyExist(key) ? vm.getPrefBoolean(key, current) : initValue;
+        if (current != needed)
+            checkBox.setChecked(needed);
+        checkBox.setOnCheckedChangeListener(onCheckedChangeListener);
     }
 
     final private static Map<Integer, String> editsMap = new HashMap<>();
@@ -1011,6 +1064,7 @@ public class SDActivity extends AppCompatActivity {
     }
 
     private void setupEditText(EditText editText) {
+        // initial setup, id-key pair must be defined in editsMap
         String key = editsMap.get(editText.getId());
         String to = editText.getText().toString();
         String tn = vm.getPrefString(key, to);
@@ -1019,7 +1073,7 @@ public class SDActivity extends AppCompatActivity {
         editText.setOnFocusChangeListener(editFocusListener);
     }
 
-    final View.OnFocusChangeListener editFocusListener = (v, hasFocus) -> {
+    final private View.OnFocusChangeListener editFocusListener = (v, hasFocus) -> {
         if (!hasFocus) {
             String key = editsMap.get(v.getId());
             if (key != null)  // known EditText
