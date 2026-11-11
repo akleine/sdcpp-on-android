@@ -381,7 +381,7 @@ public class SDActivity extends AppCompatActivity {
         // both references are needed before setup
         taesdchecker = findViewById(R.id.taesdchecker);
         taesdXLchecker = findViewById(R.id.taesdXLchecker);
-        setupCheckBox(taesdchecker, true);  // suggest by default
+        setupCheckBox(taesdchecker, true, taesdCheckListener);  // suggest by default
         if (taesdModel.isEmpty()) {
             // override user choice if Taesd is not available anymore
             taesdchecker.setChecked(false);
@@ -390,7 +390,7 @@ public class SDActivity extends AppCompatActivity {
             TextView taesdview = findViewById(R.id.taesdmodel);
             taesdview.setText(taesdModel.substring(taesdModel.lastIndexOf('/') + 1) + "  (in lora path)");
         }
-        setupCheckBox(taesdXLchecker, true);  // suggest by default
+        setupCheckBox(taesdXLchecker, true, taesdCheckListener);  // suggest by default
         if (taesdXLModel.isEmpty()) {
             // override user choice if TaesdXL is not available anymore
             taesdXLchecker.setChecked(false);
@@ -400,21 +400,21 @@ public class SDActivity extends AppCompatActivity {
             taesdXLview.setText(taesdXLModel.substring(taesdXLModel.lastIndexOf('/') + 1) + "  (in lora path)");
         }
         embeddchecker = findViewById(R.id.embeddchecker);
-        setupCheckBox(embeddchecker, false);  // disable embeddings by default
+        setupCheckBox(embeddchecker, false, onCheckedChangeListener);  // disable embeddings by default
         if (helperPath.isEmpty()) {
             taesdXLchecker.setChecked(false);
             taesdXLchecker.setEnabled(false);
         }
         gpuchecker = findViewById(R.id.usegpu);
-        setupCheckBox(gpuchecker, true);  // enable GPU by default
+        setupCheckBox(gpuchecker, true, new GpuCheckListener());  // enable GPU by default
         if (!canUseOpenCL) {
             gpuchecker.setChecked(false);
             gpuchecker.setEnabled(false);
         }
         writeCmdlineChecker = findViewById(R.id.writecmdchecker);
-        setupCheckBox(writeCmdlineChecker, true);  // write command script by default
+        setupCheckBox(writeCmdlineChecker, true, onCheckedChangeListener);  // write command script by default
         CheckBox writeLogChecker = findViewById(R.id.writelogchecker);
-        setupCheckBox(writeLogChecker, true);  // save log by default
+        setupCheckBox(writeLogChecker, true, onCheckedChangeListener);  // save log by default
 
         TextView loraPathView = findViewById(R.id.lorapath);
         loraPathView.setText(helperPath);
@@ -467,7 +467,6 @@ public class SDActivity extends AppCompatActivity {
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
                 tempFolderPath = "";
-                arguments.add("--vae-tiling");  // currently not for openCL
                 // for some budget devices with low RAM and NO usable openCL drivers:
                 if (selectedModelfile.toUpperCase().contains("SSD")) {
                     arguments.add("--type");
@@ -491,8 +490,6 @@ public class SDActivity extends AppCompatActivity {
                 tempFolderPath = getApplicationContext().getCacheDir().getAbsolutePath();
                 libPath += ":" + libVendorPath;
                 // this settings seem to work quite well at openCL/ADRENO 810
-                arguments.add("--diffusion-conv-direct");
-                arguments.add("--vae-conv-direct");
                 arguments.add("--type");
                 arguments.add(selectedModelfile.toUpperCase().contains("SDXS") ? "f16" : "q4_0");
                 // "f16" is optimal for huge VRAM or very small models like SDXS
@@ -1011,31 +1008,57 @@ public class SDActivity extends AppCompatActivity {
         checkboxesMap.put(R.id.writelogchecker, SDViewModel.prefsKeyLog);
     }
 
-    final private CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
+    private class DefCheckListener implements CompoundButton.OnCheckedChangeListener {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-            int id = compoundButton.getId();
-            if (checked) {
-                if (id == R.id.taesdXLchecker) {
-                    taesdchecker.setChecked(false);
-                } else if (id == R.id.taesdchecker) {
-                    taesdXLchecker.setChecked(false);
-                }
-            }
-            String key = checkboxesMap.get(id);
+            String key = checkboxesMap.get(compoundButton.getId());
             if (key != null)  // known CheckBox
                 vm.setPrefBoolean(key, checked);
         }
-    };
+    }
 
-    private void setupCheckBox(CheckBox checkBox, boolean initValue) {
+    final private DefCheckListener onCheckedChangeListener = new DefCheckListener();
+
+    final private class TaesdCheckListener extends DefCheckListener implements CompoundButton.OnCheckedChangeListener {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+            if (checked)
+                (compoundButton.getId() == R.id.taesdXLchecker ? taesdchecker : taesdXLchecker).setChecked(false);
+            super.onCheckedChanged(compoundButton, checked);
+        }
+    }
+
+    final private TaesdCheckListener taesdCheckListener = new TaesdCheckListener();
+
+    final private static String[] cleanSwitches = {"--diffusion-conv-direct", "--vae-conv-direct", "--vae-tiling"};
+
+    final private class GpuCheckListener extends DefCheckListener implements CompoundButton.OnCheckedChangeListener {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+            String options = optionsEditor.getText().toString();
+            String res = options;
+            //"(^*--vae-tiling\\s)|(\\s--vae-tiling$*)|(^--vae-tiling$)"
+            //"(^*--vae-tiling" + anySpace + ")|(" + anySpace + "--vae-tiling$*)|(^--vae-tiling$)"
+            for (String p : cleanSwitches)
+                res = res.replaceAll("(^*" + p + anySpace + ")|(" + anySpace + p + "$*)|(^" + p + "$)", "");
+            res += (res.isEmpty() ? "" : " ")
+                    + (checked ? "--diffusion-conv-direct --vae-conv-direct" : "--vae-tiling");
+            if (!res.equals(options)) {
+                optionsEditor.setText(res);
+                vm.setPrefString(SDViewModel.prefsKeyOptions, res);
+            }
+            super.onCheckedChanged(compoundButton, checked);
+        }
+    }
+
+    private void setupCheckBox(CheckBox checkBox, boolean initValue, CompoundButton.OnCheckedChangeListener listener) {
         // initial setup, id-key pair must be defined in checkboxesMap
         String key = checkboxesMap.get(checkBox.getId());
         boolean current = checkBox.isChecked();
         boolean needed = vm.prefKeyExist(key) ? vm.getPrefBoolean(key, current) : initValue;
         if (current != needed)
             checkBox.setChecked(needed);
-        checkBox.setOnCheckedChangeListener(onCheckedChangeListener);
+        checkBox.setOnCheckedChangeListener(listener);
     }
 
     final private static Map<Integer, String> editsMap = new HashMap<>();
