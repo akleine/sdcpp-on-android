@@ -7,6 +7,7 @@ import androidx.preference.PreferenceManager;
 import androidx.lifecycle.AndroidViewModel;
 
 public class SDViewModel extends AndroidViewModel {
+    // EditText
     public static final String prefsKeyPrompt    = "prefs_prompt";
     public static final String prefsKeyNegPrompt = "prefs_neg_prompt";
     public static final String prefsKeyOptions   = "prefs_options";
@@ -15,6 +16,13 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeyWidth     = "prefs_width";
     public static final String prefsKeyHeight    = "prefs_height";
     public static final String prefsKeyCfgScale  = "prefs_cfgscale";
+    // CheckBox
+    public static final String prefsKeyGpu     = "prefs_gpu";
+    public static final String prefsKeyEmbed   = "prefs_embeddings";
+    public static final String prefsKeyTaesd   = "prefs_taesd";
+    public static final String prefsKeyTaesdXL = "prefs_taesdxl";
+    public static final String prefsKeyCmd     = "prefs_write_cmd";
+    public static final String prefsKeyLog     = "prefs_write_log";
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
     private boolean prefsChanged = false;
@@ -51,6 +59,10 @@ public class SDViewModel extends AndroidViewModel {
             prefsChanged = false;
     }
 
+    public boolean prefKeyExist(String prefName) {
+        return prefs.contains(prefName);
+    }
+
     public String getPrefString(String prefName, String defValue) {
         String value;
         try {
@@ -82,4 +94,33 @@ public class SDViewModel extends AndroidViewModel {
             prefsChanged = true;
         }
     }
+
+    public boolean getPrefBoolean(String prefName, boolean defValue) {
+        boolean value;
+        try {
+            value = prefs.getBoolean(prefName, defValue);
+        } catch (Exception ignored) {
+            prefsEditor.remove(prefName);
+            prefsChanged = true;
+            value = defValue;
+        }
+        return value;
+    }
+
+    public void setPrefBoolean(String prefName, boolean value) {
+        boolean needWrite = !prefs.contains(prefName);  // force write 1st time
+        if (!needWrite) {
+            try {
+                needWrite = prefs.getBoolean(prefName, false) != value;
+            } catch (Exception ignored) {
+                prefsEditor.remove(prefName);
+                needWrite = true;
+            }
+        }
+        if (needWrite) {
+            prefsEditor.putBoolean(prefName, value);
+            prefsChanged = true;
+        }
+    }
+
 }
