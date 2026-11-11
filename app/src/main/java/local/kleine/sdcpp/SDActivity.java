@@ -305,7 +305,7 @@ public class SDActivity extends AppCompatActivity {
         if (sd_thread != null) {
             // SD.cpp is launched or was finished, displaying the log
             setupLogWindow();
-            wrapperView.setVisibility(View.GONE);  // hide settings
+            wrapperView.setVisibility(View.GONE);
             addScreenDimmer();
             if (sd_thread.process != null)
                 lockScreenOn();  // still running, prevent sleeping
