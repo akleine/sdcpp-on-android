@@ -310,8 +310,8 @@ public class SDActivity extends AppCompatActivity {
             if (sd_thread.process != null)
                 lockScreenOn();  // still running, prevent sleeping
             sd_thread.updateActivity((SDActivity) myActivity);
-            closeButton.setOnClickListener(cancelGenerationListener);
             File file = new File(sd_thread.outputImagePath);
+            closeButton.setOnClickListener(cancelGenerationListener);
             if (file.exists()) {
                 imageOutputView.setVisibility(View.VISIBLE);
                 displayResultImageFile(file);
