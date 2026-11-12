@@ -377,10 +377,17 @@ public class SDActivity extends AppCompatActivity {
         scheduler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         scheduler_spinner.setAdapter(scheduler_adapter);
 
-        // taesd checkboxes switch each other, therefore
-        // both references are needed before setup
+        // checkboxes may switch each other, therefore
+        // all references are needed before setup
         taesdchecker = findViewById(R.id.taesdchecker);
         taesdXLchecker = findViewById(R.id.taesdXLchecker);
+        embeddchecker = findViewById(R.id.embeddchecker);
+        gpuchecker = findViewById(R.id.usegpu);
+        vaetilingchecker = findViewById(R.id.vaetiling);
+        convdirectchecker = findViewById(R.id.convdirect);
+        writeCmdlineChecker = findViewById(R.id.writecmdchecker);
+        CheckBox writeLogChecker = findViewById(R.id.writelogchecker);
+
         setupCheckBox(taesdchecker, true, taesdCheckListener);  // suggest by default
         if (taesdModel.isEmpty()) {
             // override user choice if Taesd is not available anymore
@@ -399,25 +406,19 @@ public class SDActivity extends AppCompatActivity {
             TextView taesdXLview = findViewById(R.id.taesdXLmodel);
             taesdXLview.setText(taesdXLModel.substring(taesdXLModel.lastIndexOf('/') + 1) + "  (in lora path)");
         }
-        embeddchecker = findViewById(R.id.embeddchecker);
         setupCheckBox(embeddchecker, false, onCheckedChangeListener);  // disable embeddings by default
         if (helperPath.isEmpty()) {
             taesdXLchecker.setChecked(false);
             taesdXLchecker.setEnabled(false);
         }
-        gpuchecker = findViewById(R.id.usegpu);
         setupCheckBox(gpuchecker, true, new GpuCheckListener());  // enable GPU by default
         if (!canUseOpenCL) {
             gpuchecker.setChecked(false);
             gpuchecker.setEnabled(false);
         }
-        vaetilingchecker = findViewById(R.id.vaetiling);
         setupCheckBox(vaetilingchecker, true, onCheckedChangeListener);  // enable by default to reduce memory
-        convdirectchecker = findViewById(R.id.convdirect);
         setupCheckBox(convdirectchecker, true, onCheckedChangeListener);
-        writeCmdlineChecker = findViewById(R.id.writecmdchecker);
         setupCheckBox(writeCmdlineChecker, true, onCheckedChangeListener);  // write command script by default
-        CheckBox writeLogChecker = findViewById(R.id.writelogchecker);
         setupCheckBox(writeLogChecker, true, onCheckedChangeListener);  // save log by default
 
         TextView loraPathView = findViewById(R.id.lorapath);
