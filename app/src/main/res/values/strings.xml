@@ -31,4 +31,5 @@
     <string name="can_not_run_sd_process">"can not run SD process: "</string>
     <string name="write_cmdline">write cmdline</string>
     <string name="write_log">write log</string>
+    <string name="vae_tiling">vae tiling</string>
 </resources>
