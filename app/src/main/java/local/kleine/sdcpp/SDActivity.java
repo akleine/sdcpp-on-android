@@ -81,7 +81,7 @@ public class SDActivity extends AppCompatActivity {
 
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor, optionsEditor;
-    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker, vaetilingchecker;
+    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker, vaetilingchecker, convdirectchecker;
     private View wrapperView;
     private ListView sdLogView;
     private View coverView;
@@ -405,15 +405,16 @@ public class SDActivity extends AppCompatActivity {
             taesdXLchecker.setChecked(false);
             taesdXLchecker.setEnabled(false);
         }
-        // used by gpuchecker, needs to be initialized before it
-        vaetilingchecker = findViewById(R.id.vaetiling);
-        setupCheckBox(vaetilingchecker, true, onCheckedChangeListener);  // enable by default to reduce memory
         gpuchecker = findViewById(R.id.usegpu);
         setupCheckBox(gpuchecker, true, new GpuCheckListener());  // enable GPU by default
         if (!canUseOpenCL) {
             gpuchecker.setChecked(false);
             gpuchecker.setEnabled(false);
         }
+        vaetilingchecker = findViewById(R.id.vaetiling);
+        setupCheckBox(vaetilingchecker, true, onCheckedChangeListener);  // enable by default to reduce memory
+        convdirectchecker = findViewById(R.id.convdirect);
+        setupCheckBox(convdirectchecker, true, onCheckedChangeListener);
         writeCmdlineChecker = findViewById(R.id.writecmdchecker);
         setupCheckBox(writeCmdlineChecker, true, onCheckedChangeListener);  // write command script by default
         CheckBox writeLogChecker = findViewById(R.id.writelogchecker);
@@ -469,6 +470,10 @@ public class SDActivity extends AppCompatActivity {
             }
             if (vaetilingchecker.isChecked())
                 arguments.add("--vae-tiling");
+            if (convdirectchecker.isChecked()) {
+                arguments.add("--diffusion-conv-direct");
+                arguments.add("--vae-conv-direct");
+            }
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
                 tempFolderPath = "";
@@ -495,8 +500,6 @@ public class SDActivity extends AppCompatActivity {
                 tempFolderPath = getApplicationContext().getCacheDir().getAbsolutePath();
                 libPath += ":" + libVendorPath;
                 // this settings seem to work quite well at openCL/ADRENO 810
-                arguments.add("--diffusion-conv-direct");
-                arguments.add("--vae-conv-direct");
                 arguments.add("--type");
                 arguments.add(selectedModelfile.toUpperCase().contains("SDXS") ? "f16" : "q4_0");
                 // "f16" is optimal for huge VRAM or very small models like SDXS
@@ -1013,7 +1016,8 @@ public class SDActivity extends AppCompatActivity {
         checkboxesMap.put(R.id.taesdXLchecker, SDViewModel.prefsKeyTaesdXL);
         checkboxesMap.put(R.id.writecmdchecker, SDViewModel.prefsKeyCmd);
         checkboxesMap.put(R.id.writelogchecker, SDViewModel.prefsKeyLog);
-        checkboxesMap.put(R.id.vaetiling, SDViewModel.prefsKeyTiling);
+        checkboxesMap.put(R.id.vaetiling, SDViewModel.prefsKeyVaeTiling);
+        checkboxesMap.put(R.id.convdirect, SDViewModel.prefsKeyConvDirect);
     }
 
     private class DefCheckListener implements CompoundButton.OnCheckedChangeListener {
@@ -1042,6 +1046,7 @@ public class SDActivity extends AppCompatActivity {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
             vaetilingchecker.setChecked(!checked);  // currently not for openCL
+            convdirectchecker.setChecked(checked);
             super.onCheckedChanged(compoundButton, checked);
         }
     }
@@ -1051,9 +1056,11 @@ public class SDActivity extends AppCompatActivity {
         String key = checkboxesMap.get(checkBox.getId());
         boolean current = checkBox.isChecked();
         boolean needed = vm.prefKeyExist(key) ? vm.getPrefBoolean(key, current) : initValue;
-        checkBox.setOnCheckedChangeListener(listener);
         if (current != needed)
             checkBox.setChecked(needed);
+        // setting the listener after the state change,
+        // to not override user settings during setup
+        checkBox.setOnCheckedChangeListener(listener);
     }
 
     final private static Map<Integer, String> editsMap = new HashMap<>();
