@@ -1073,8 +1073,6 @@ public class SDActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         //processInfo("onPause");
-        // needs public vm.prefsChanged
-        //Toast.makeText(myActivity, "onPause, prefsChanged = " + vm.prefsChanged, Toast.LENGTH_SHORT).show();
 
         // saving content with editFocusListener
         View v = getCurrentFocus();
