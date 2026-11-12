@@ -23,6 +23,7 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeyTaesdXL = "prefs_taesdxl";
     public static final String prefsKeyCmd     = "prefs_write_cmd";
     public static final String prefsKeyLog     = "prefs_write_log";
+    public static final String prefsKeyTiling  = "prefs_vae_tiling";
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
     private boolean prefsChanged = false;
