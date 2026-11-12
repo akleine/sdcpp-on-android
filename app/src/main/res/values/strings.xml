@@ -32,4 +32,5 @@
     <string name="write_cmdline">write cmdline</string>
     <string name="write_log">write log</string>
     <string name="vae_tiling">vae tiling</string>
+    <string name="conv_direct">conv-direct</string>
 </resources>
