@@ -363,6 +363,23 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <CheckBox
+                    android:id="@+id/vaetiling"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/vae_tiling"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <!-- placeholder for 2nd checkbox -->
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="6dp"
                 android:orientation="vertical">
 
