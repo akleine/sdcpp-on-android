@@ -542,7 +542,7 @@ public class SDActivity extends AppCompatActivity {
                     args[12] = "\"" + args[12] + "\"";
                     args[16] = "\"" + args[16] + "\"";
                     String cmdline = String.join(" ", args);
-                    cmdline = cmdline.replaceAll("\\s+(?=-)", " \\\\\n");
+                    cmdline = cmdline.replaceAll("\\s+(?=-(?!\\d))", " \\\\\n\t");
                     writer.write(cmdline);
                     writer.close();
                 } catch (IOException e) {
