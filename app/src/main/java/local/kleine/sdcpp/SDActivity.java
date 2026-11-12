@@ -81,7 +81,7 @@ public class SDActivity extends AppCompatActivity {
 
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
             widthEditor, heightEditor, cfgscaleEditor, optionsEditor;
-    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker;
+    private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker, vaetilingchecker;
     private View wrapperView;
     private ListView sdLogView;
     private View coverView;
@@ -405,6 +405,9 @@ public class SDActivity extends AppCompatActivity {
             taesdXLchecker.setChecked(false);
             taesdXLchecker.setEnabled(false);
         }
+        // used by gpuchecker, needs to be initialized before it
+        vaetilingchecker = findViewById(R.id.vaetiling);
+        setupCheckBox(vaetilingchecker, true, onCheckedChangeListener);  // enable by default to reduce memory
         gpuchecker = findViewById(R.id.usegpu);
         setupCheckBox(gpuchecker, true, new GpuCheckListener());  // enable GPU by default
         if (!canUseOpenCL) {
@@ -464,6 +467,8 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--auto-fit");
                 arguments.add("off");
             }
+            if (vaetilingchecker.isChecked())
+                arguments.add("--vae-tiling");
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
                 tempFolderPath = "";
@@ -490,6 +495,8 @@ public class SDActivity extends AppCompatActivity {
                 tempFolderPath = getApplicationContext().getCacheDir().getAbsolutePath();
                 libPath += ":" + libVendorPath;
                 // this settings seem to work quite well at openCL/ADRENO 810
+                arguments.add("--diffusion-conv-direct");
+                arguments.add("--vae-conv-direct");
                 arguments.add("--type");
                 arguments.add(selectedModelfile.toUpperCase().contains("SDXS") ? "f16" : "q4_0");
                 // "f16" is optimal for huge VRAM or very small models like SDXS
@@ -1006,6 +1013,7 @@ public class SDActivity extends AppCompatActivity {
         checkboxesMap.put(R.id.taesdXLchecker, SDViewModel.prefsKeyTaesdXL);
         checkboxesMap.put(R.id.writecmdchecker, SDViewModel.prefsKeyCmd);
         checkboxesMap.put(R.id.writelogchecker, SDViewModel.prefsKeyLog);
+        checkboxesMap.put(R.id.vaetiling, SDViewModel.prefsKeyTiling);
     }
 
     private class DefCheckListener implements CompoundButton.OnCheckedChangeListener {
@@ -1030,23 +1038,10 @@ public class SDActivity extends AppCompatActivity {
 
     final private TaesdCheckListener taesdCheckListener = new TaesdCheckListener();
 
-    final private static String[] cleanSwitches = {"--diffusion-conv-direct", "--vae-conv-direct", "--vae-tiling"};
-
     final private class GpuCheckListener extends DefCheckListener implements CompoundButton.OnCheckedChangeListener {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-            String options = optionsEditor.getText().toString();
-            String res = options;
-            //"(^*--vae-tiling\\s)|(\\s--vae-tiling$*)|(^--vae-tiling$)"
-            //"(^*--vae-tiling" + anySpace + ")|(" + anySpace + "--vae-tiling$*)|(^--vae-tiling$)"
-            for (String p : cleanSwitches)
-                res = res.replaceAll("(^*" + p + anySpace + ")|(" + anySpace + p + "$*)|(^" + p + "$)", "");
-            res += (res.isEmpty() ? "" : " ")
-                    + (checked ? "--diffusion-conv-direct --vae-conv-direct" : "--vae-tiling");
-            if (!res.equals(options)) {
-                optionsEditor.setText(res);
-                vm.setPrefString(SDViewModel.prefsKeyOptions, res);
-            }
+            vaetilingchecker.setChecked(!checked);  // currently not for openCL
             super.onCheckedChanged(compoundButton, checked);
         }
     }
@@ -1056,9 +1051,9 @@ public class SDActivity extends AppCompatActivity {
         String key = checkboxesMap.get(checkBox.getId());
         boolean current = checkBox.isChecked();
         boolean needed = vm.prefKeyExist(key) ? vm.getPrefBoolean(key, current) : initValue;
+        checkBox.setOnCheckedChangeListener(listener);
         if (current != needed)
             checkBox.setChecked(needed);
-        checkBox.setOnCheckedChangeListener(listener);
     }
 
     final private static Map<Integer, String> editsMap = new HashMap<>();
@@ -1078,6 +1073,8 @@ public class SDActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         //processInfo("onPause");
+        // needs public vm.prefsChanged
+        //Toast.makeText(myActivity, "onPause, prefsChanged = " + vm.prefsChanged, Toast.LENGTH_SHORT).show();
 
         // saving content with editFocusListener
         View v = getCurrentFocus();
