@@ -373,7 +373,13 @@
                     android:text="@string/vae_tiling"
                     android:textAppearance="?android:attr/textAppearanceMedium" />
 
-                <!-- placeholder for 2nd checkbox -->
+                <CheckBox
+                    android:id="@+id/convdirect"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/conv_direct"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
 
             </LinearLayout>
 
