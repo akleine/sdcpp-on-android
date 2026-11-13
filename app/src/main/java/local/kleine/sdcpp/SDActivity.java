@@ -46,16 +46,22 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class SDActivity extends AppCompatActivity {
 
@@ -137,6 +143,7 @@ public class SDActivity extends AppCompatActivity {
     private static final int POS_DISCRETE = 0;
     private static final int POS_SGM_UNI = 5;
     private List<String> fileList, samplerList, schedulerList;
+    private Map<String, View> template_views;
 
     public SDActivity() {
         super();
@@ -332,6 +339,10 @@ public class SDActivity extends AppCompatActivity {
             }
         }
         setupLogWindow();
+        Button fileSelectButton = findViewById(R.id.fileSelectButton);
+        fileSelectButton.setOnClickListener(v ->
+                filePicker.launch(new String[]{"text/*"})
+        );
         promptEditor = findViewById(R.id.stringprompt);
         setupEditText(promptEditor);
         promptEditor.addTextChangedListener(createTextWatcher());
@@ -582,6 +593,18 @@ public class SDActivity extends AppCompatActivity {
             );
             return true;
         });
+        template_views = new HashMap<String, View>() {{
+            put("-p", promptEditor);
+            put("-n", negativeEditor);
+            put("-m", model_spinner);
+            put("--steps", stepsEditor);
+            put("--seed", seedEditor);
+            put("--cfg-scale", cfgscaleEditor);
+            put("--width", widthEditor);
+            put("--height", heightEditor);
+            put("--sampling-method", sampler_spinner);
+            put("--scheduler", scheduler_spinner);
+        }};
     }
 
     @NonNull
@@ -958,8 +981,6 @@ public class SDActivity extends AppCompatActivity {
             if (parent.getId() == R.id.model_spinner) {
                 selectedModelfile = fileList.get(position);
                 // here follow some lazy checks for easy defaults - just for the moment
-                // ** T o D o ** : better use some receipes, just like this example:
-                // https://github.com/leejet/stable-diffusion.cpp/blob/master/examples/server/recipes/sdxs.json
                 if (selectedModelfile.toUpperCase().contains("SDXS")
                         || selectedModelfile.toUpperCase().contains("STAR")
                         || selectedModelfile.toUpperCase().contains("NITRO")) {
@@ -1144,4 +1165,52 @@ public class SDActivity extends AppCompatActivity {
         super.onDestroy();
     }
 */
+    private final ActivityResultLauncher<String[]> filePicker =
+            registerForActivityResult(
+                    new ActivityResultContracts.OpenDocument(),
+                    uri -> {
+                        if (uri != null) {
+                            try (InputStream input = getContentResolver().openInputStream(uri)) {
+                                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+                                String cmdline = reader.lines().collect(Collectors.joining());
+                                parse(cmdline);
+                            } catch (IOException e) {
+                                Toast.makeText(this, "Could not read file: " + e.getMessage(),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }
+            );
+
+    private List<String> tokenize(String input) {
+        List<String> tokens = new ArrayList<>();
+        Matcher m = Pattern.compile("\"([^\"]*)\"|([^\\s\\\\]+)").matcher(input);
+        while (m.find()) {
+            tokens.add(m.group(1) != null ? m.group(1) : m.group(2));
+            // group 1: "words inside quotation marks"  group 2: all_others
+        }
+        return tokens;
+    }
+
+    private void parse(String input) {
+        List<String> tokens = tokenize(input);
+        for (int i = 0; i < tokens.size(); i++) {
+            String option = tokens.get(i);
+            if (template_views.containsKey(option)) {
+                View v = template_views.get(option);
+                if (v instanceof EditText) {
+                    ((EditText) v).setText(tokens.get(++i));
+                    ((EditText) v).setTextColor(getColor(R.color.teal_200));
+// todo:
+//                } else {
+//                    if(v instanceof Spinner) {
+//                        ((Spinner) v).setSelection( xxx );
+//                    } else
+//                        ...checkboxes...
+                }
+            }
+        }
+    }
+
 }
+
