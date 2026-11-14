@@ -1254,7 +1254,7 @@ public class SDActivity extends AppCompatActivity {
         });
         List<String> displayNames = new ArrayList<>();
         List<File> fileObjects = new ArrayList<>();
-        if (directory.getName().equals(sdWorkPath)) {
+        if (!directory.getName().equals(sdWorkPath)) {
             displayNames.add("📁 .. ");
             fileObjects.add(directory.getParentFile());
         }
