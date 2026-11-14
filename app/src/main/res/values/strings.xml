@@ -33,4 +33,5 @@
     <string name="write_log">write log</string>
     <string name="vae_tiling">vae tiling</string>
     <string name="conv_direct">conv-direct</string>
+	<string name="param_template">load params from script</string>
 </resources>
