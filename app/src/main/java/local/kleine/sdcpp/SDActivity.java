@@ -395,7 +395,7 @@ public class SDActivity extends AppCompatActivity {
             wlp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
             detailsWrapper.setLayoutParams(wlp);
             detailsArrow.setRotation(0);
-            detailsCaption.setText(getString(R.string.more_settings_open));
+            detailsCaption.setText(getString(R.string.more_settings_opened));
         } else {
             detailsLayout.post(() -> {
                 // measuring height of hidden settings layout
@@ -420,7 +420,7 @@ public class SDActivity extends AppCompatActivity {
             wlp.height = vm.make_open ? ViewGroup.LayoutParams.WRAP_CONTENT : 0;
             detailsWrapper.setLayoutParams(wlp);
             detailsArrow.setRotation(vm.make_open ? 0 : 270);
-            detailsCaption.setText(getString(vm.make_open ? R.string.more_settings_open : R.string.more_settings_closed));
+            detailsCaption.setText(getString(vm.make_open ? R.string.more_settings_opened    : R.string.more_settings_closed));
         };
         detailsHeader.setOnClickListener(detailsTogggler);
         detailsFooter.setOnClickListener(detailsTogggler);
