@@ -18,14 +18,18 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -34,6 +38,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -376,6 +381,49 @@ public class SDActivity extends AppCompatActivity {
         ArrayAdapter<String> scheduler_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, schedulerList);
         scheduler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         scheduler_spinner.setAdapter(scheduler_adapter);
+
+        // animator setup
+        LinearLayout animatedLayout = findViewById(R.id.details_animation);
+        View detailsHeader = findViewById(R.id.details_header);
+        View detailsFooter = findViewById(R.id.details_footer);
+        View detailsArrow = findViewById(R.id.details_arrow);
+        LinearLayout detailsWrapper = findViewById(R.id.details_wrapper);
+        LinearLayout detailsLayout = findViewById(R.id.details_layout);
+        TextView detailsCaption = findViewById(R.id.details_caption);
+        if (vm.make_open) {
+            ViewGroup.LayoutParams wlp = detailsWrapper.getLayoutParams();
+            wlp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            detailsWrapper.setLayoutParams(wlp);
+            detailsArrow.setRotation(0);
+            detailsCaption.setText(getString(R.string.more_settings_open));
+        } else {
+            detailsLayout.post(() -> {
+                // measuring height of hidden settings layout
+                // after the sizes of controls have been measured
+                ViewGroup.LayoutParams lp = detailsLayout.getLayoutParams();
+                detailsLayout.measure(
+                        View.MeasureSpec.makeMeasureSpec(detailsLayout.getWidth(), View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+                lp.height = detailsLayout.getMeasuredHeight();
+                detailsLayout.setLayoutParams(lp);
+            });
+        }
+        View.OnClickListener detailsTogggler = v -> {
+            ViewGroup.LayoutParams wlp = detailsWrapper.getLayoutParams();
+            ViewGroup.LayoutParams lp = detailsLayout.getLayoutParams();
+            vm.make_open = wlp.height != ViewGroup.LayoutParams.WRAP_CONTENT;
+            lp.height = vm.make_open ? ViewGroup.LayoutParams.WRAP_CONTENT : detailsLayout.getHeight();
+            detailsLayout.setLayoutParams(lp);
+            TransitionManager.beginDelayedTransition(animatedLayout, new AutoTransition()
+                    .setDuration(500).setInterpolator(new DecelerateInterpolator())
+            );
+            wlp.height = vm.make_open ? ViewGroup.LayoutParams.WRAP_CONTENT : 0;
+            detailsWrapper.setLayoutParams(wlp);
+            detailsArrow.setRotation(vm.make_open ? 0 : 270);
+            detailsCaption.setText(getString(vm.make_open ? R.string.more_settings_open : R.string.more_settings_closed));
+        };
+        detailsHeader.setOnClickListener(detailsTogggler);
+        detailsFooter.setOnClickListener(detailsTogggler);
 
         // checkboxes may switch each other, therefore
         // all references are needed before setup
