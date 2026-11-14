@@ -94,6 +94,7 @@ public class SDActivity extends AppCompatActivity {
     private Button closeButton;
     private Spinner sampler_spinner;
     private Spinner scheduler_spinner;
+    private Spinner model_spinner;
     private ImageView imageOutputView;
     private ArrayAdapter<String> arrayAdapter;
     private static final String[] samplerArr = {
@@ -143,7 +144,7 @@ public class SDActivity extends AppCompatActivity {
     private static final int POS_DISCRETE = 0;
     private static final int POS_SGM_UNI = 5;
     private List<String> fileList, samplerList, schedulerList;
-    private Map<String, View> template_views;
+
 
     public SDActivity() {
         super();
@@ -368,7 +369,7 @@ public class SDActivity extends AppCompatActivity {
             fileList.add("At first copy SD model file to this device.");
         }
         Collections.sort(fileList);
-        Spinner model_spinner = findViewById(R.id.model_spinner);
+        model_spinner = findViewById(R.id.model_spinner);
         model_spinner.setOnItemSelectedListener(new ItemSelectedListener());
         ArrayAdapter<String> model_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, fileList);
         model_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -565,6 +566,15 @@ public class SDActivity extends AppCompatActivity {
                     args[16] = "\"" + args[16] + "\"";
                     String cmdline = String.join(" ", args);
                     cmdline = cmdline.replaceAll("\\s+(?=-(?!\\d))", " \\\\\n\t");
+                    // adding some pseudo args as extra info for later file usage in parseShellScript()
+                    cmdline = cmdline.concat(" \n exit # --end here--");
+                    if (taesdchecker.isChecked()) {
+                        cmdline = cmdline.concat("\n\t--use-taesd");
+                    }
+                    if (taesdXLchecker.isChecked()) {
+                        cmdline = cmdline.concat("\n\t--use-taesdXL");
+                    }
+                    //--
                     writer.write(cmdline);
                     writer.close();
                 } catch (IOException e) {
@@ -593,18 +603,7 @@ public class SDActivity extends AppCompatActivity {
             );
             return true;
         });
-        template_views = new HashMap<String, View>() {{
-            put("-p", promptEditor);
-            put("-n", negativeEditor);
-            put("-m", model_spinner);
-            put("--steps", stepsEditor);
-            put("--seed", seedEditor);
-            put("--cfg-scale", cfgscaleEditor);
-            put("--width", widthEditor);
-            put("--height", heightEditor);
-            put("--sampling-method", sampler_spinner);
-            put("--scheduler", scheduler_spinner);
-        }};
+
     }
 
     @NonNull
@@ -1128,43 +1127,6 @@ public class SDActivity extends AppCompatActivity {
         }
     };
 
-/*
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        processInfo(null, "onSaveInstanceState");
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        processInfo(null, "onResume");
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        processInfo(null, "onStart");
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        processInfo(null, "onRestart");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (process != null)
-            processInfo(null, "onStop");
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-*/
     private final ActivityResultLauncher<String[]> filePicker =
             registerForActivityResult(
                     new ActivityResultContracts.OpenDocument(),
@@ -1173,7 +1135,7 @@ public class SDActivity extends AppCompatActivity {
                             try (InputStream input = getContentResolver().openInputStream(uri)) {
                                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
                                 String cmdline = reader.lines().collect(Collectors.joining());
-                                parse(cmdline);
+                                parseShellScript(cmdline);
                             } catch (IOException e) {
                                 Toast.makeText(this, "Could not read file: " + e.getMessage(),
                                         Toast.LENGTH_LONG).show();
@@ -1192,25 +1154,56 @@ public class SDActivity extends AppCompatActivity {
         return tokens;
     }
 
-    private void parse(String input) {
+    private Map<String, View> parse_prepare_map() {
+        return new HashMap<String, View>() {{
+            put("-p", promptEditor);
+            put("-n", negativeEditor);
+            put("-m", model_spinner);
+            put("--steps", stepsEditor);
+            put("--seed", seedEditor);
+            put("--cfg-scale", cfgscaleEditor);
+            put("--width", widthEditor);
+            put("--height", heightEditor);
+            put("--sampling-method", sampler_spinner);
+            put("--scheduler", scheduler_spinner);
+            put("--use-taesd", taesdchecker);                   // pseudo option
+            put("--use-taesdXL", taesdXLchecker);               // pseudo option
+            put("--vae-tiling", vaetilingchecker);              // real option
+            put("--diffusion-conv-direct", convdirectchecker);  // real option
+        }};
+    }
+
+    private void parseShellScript(String input) {
+        Map<String, View> UIviewMap = parse_prepare_map();
         List<String> tokens = tokenize(input);
         for (int i = 0; i < tokens.size(); i++) {
             String option = tokens.get(i);
-            if (template_views.containsKey(option)) {
-                View v = template_views.get(option);
+            if (UIviewMap.containsKey(option)) {
+                View v = UIviewMap.get(option);
                 if (v instanceof EditText) {
                     ((EditText) v).setText(tokens.get(++i));
-                    ((EditText) v).setTextColor(getColor(R.color.teal_200));
-// todo:
-//                } else {
-//                    if(v instanceof Spinner) {
-//                        ((Spinner) v).setSelection( xxx );
-//                    } else
-//                        ...checkboxes...
+                    // ((EditText) v).setTextColor(getColor(R.color.teal_700));
+                } else {
+                    if (v instanceof Spinner) {
+                        String optionValue = tokens.get(++i);
+                        if (v.equals(findViewById(R.id.model_spinner))) {
+                            optionValue = optionValue.substring(sdWorkPath.length() + 1);
+                        }
+                        //noinspection unchecked
+                        ArrayAdapter<String> adapter = (ArrayAdapter<String>) ((Spinner) v).getAdapter();
+                        if (adapter.getPosition(optionValue) >= 0) {
+                            ((Spinner) v).setSelection(adapter.getPosition(optionValue));
+                        }
+                    } else {
+                        if (v instanceof CheckBox) {
+                            ((CheckBox) v).setChecked(true);        // to do: uncheck if missing option
+                        }
+                    }
                 }
             }
         }
     }
-
 }
+
+
 
