@@ -18,14 +18,18 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -34,6 +38,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -42,12 +47,15 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,11 +64,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.io.FileReader;
 
 public class SDActivity extends AppCompatActivity {
-
+    private File currentDirectory;
+    private AlertDialog currentDialog;
     public static final int EXIT_CODE_DO_RESTART = 1001;
-
     private SDViewModel vm = null;
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
@@ -88,6 +100,7 @@ public class SDActivity extends AppCompatActivity {
     private Button closeButton;
     private Spinner sampler_spinner;
     private Spinner scheduler_spinner;
+    private Spinner model_spinner;
     private ImageView imageOutputView;
     private ArrayAdapter<String> arrayAdapter;
     private static final String[] samplerArr = {
@@ -137,6 +150,7 @@ public class SDActivity extends AppCompatActivity {
     private static final int POS_DISCRETE = 0;
     private static final int POS_SGM_UNI = 5;
     private List<String> fileList, samplerList, schedulerList;
+
 
     public SDActivity() {
         super();
@@ -332,6 +346,10 @@ public class SDActivity extends AppCompatActivity {
             }
         }
         setupLogWindow();
+        Button fileSelectButton = findViewById(R.id.fileSelectButton);
+        fileSelectButton.setOnClickListener(v ->
+                recursiveFolderBrowser(new File(sdWorkPath))
+        );
         promptEditor = findViewById(R.id.stringprompt);
         setupEditText(promptEditor);
         promptEditor.addTextChangedListener(createTextWatcher());
@@ -357,7 +375,7 @@ public class SDActivity extends AppCompatActivity {
             fileList.add("At first copy SD model file to this device.");
         }
         Collections.sort(fileList);
-        Spinner model_spinner = findViewById(R.id.model_spinner);
+        model_spinner = findViewById(R.id.model_spinner);
         model_spinner.setOnItemSelectedListener(new ItemSelectedListener());
         ArrayAdapter<String> model_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, fileList);
         model_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -376,6 +394,49 @@ public class SDActivity extends AppCompatActivity {
         ArrayAdapter<String> scheduler_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, schedulerList);
         scheduler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         scheduler_spinner.setAdapter(scheduler_adapter);
+
+        // animator setup
+        LinearLayout animatedLayout = findViewById(R.id.details_animation);
+        View detailsHeader = findViewById(R.id.details_header);
+        View detailsFooter = findViewById(R.id.details_footer);
+        View detailsArrow = findViewById(R.id.details_arrow);
+        LinearLayout detailsWrapper = findViewById(R.id.details_wrapper);
+        LinearLayout detailsLayout = findViewById(R.id.details_layout);
+        TextView detailsCaption = findViewById(R.id.details_caption);
+        if (vm.make_open) {
+            ViewGroup.LayoutParams wlp = detailsWrapper.getLayoutParams();
+            wlp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            detailsWrapper.setLayoutParams(wlp);
+            detailsArrow.setRotation(0);
+            detailsCaption.setText(getString(R.string.more_settings_opened));
+        } else {
+            detailsLayout.post(() -> {
+                // measuring height of hidden settings layout
+                // after the sizes of controls have been measured
+                ViewGroup.LayoutParams lp = detailsLayout.getLayoutParams();
+                detailsLayout.measure(
+                        View.MeasureSpec.makeMeasureSpec(detailsLayout.getWidth(), View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+                lp.height = detailsLayout.getMeasuredHeight();
+                detailsLayout.setLayoutParams(lp);
+            });
+        }
+        View.OnClickListener detailsTogggler = v -> {
+            ViewGroup.LayoutParams wlp = detailsWrapper.getLayoutParams();
+            ViewGroup.LayoutParams lp = detailsLayout.getLayoutParams();
+            vm.make_open = wlp.height != ViewGroup.LayoutParams.WRAP_CONTENT;
+            lp.height = vm.make_open ? ViewGroup.LayoutParams.WRAP_CONTENT : detailsLayout.getHeight();
+            detailsLayout.setLayoutParams(lp);
+            TransitionManager.beginDelayedTransition(animatedLayout, new AutoTransition()
+                    .setDuration(500).setInterpolator(new DecelerateInterpolator())
+            );
+            wlp.height = vm.make_open ? ViewGroup.LayoutParams.WRAP_CONTENT : 0;
+            detailsWrapper.setLayoutParams(wlp);
+            detailsArrow.setRotation(vm.make_open ? 0 : 270);
+            detailsCaption.setText(getString(vm.make_open ? R.string.more_settings_opened    : R.string.more_settings_closed));
+        };
+        detailsHeader.setOnClickListener(detailsTogggler);
+        detailsFooter.setOnClickListener(detailsTogggler);
 
         // checkboxes may switch each other, therefore
         // all references are needed before setup
@@ -554,6 +615,10 @@ public class SDActivity extends AppCompatActivity {
                     args[16] = "\"" + args[16] + "\"";
                     String cmdline = String.join(" ", args);
                     cmdline = cmdline.replaceAll("\\s+(?=-(?!\\d))", " \\\\\n\t");
+                    // adding some pseudo args as extra info for later file usage in parseShellScript()
+                    cmdline = cmdline.concat(" \n exit # --end here--");
+                    cmdline = cmdline.concat(taesdchecker.isChecked() ? "\n\t--use-taesd" : "\n\t--no-taesd");
+                    cmdline = cmdline.concat(taesdXLchecker.isChecked() ? "\n\t--use-taesdXL" : "\n\t--no-taesdXL");
                     writer.write(cmdline);
                     writer.close();
                 } catch (IOException e) {
@@ -582,6 +647,7 @@ public class SDActivity extends AppCompatActivity {
             );
             return true;
         });
+
     }
 
     @NonNull
@@ -958,8 +1024,6 @@ public class SDActivity extends AppCompatActivity {
             if (parent.getId() == R.id.model_spinner) {
                 selectedModelfile = fileList.get(position);
                 // here follow some lazy checks for easy defaults - just for the moment
-                // ** T o D o ** : better use some receipes, just like this example:
-                // https://github.com/leejet/stable-diffusion.cpp/blob/master/examples/server/recipes/sdxs.json
                 if (selectedModelfile.toUpperCase().contains("SDXS")
                         || selectedModelfile.toUpperCase().contains("STAR")
                         || selectedModelfile.toUpperCase().contains("NITRO")) {
@@ -1115,41 +1179,136 @@ public class SDActivity extends AppCompatActivity {
         }
     };
 
-/*
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        processInfo(null, "onSaveInstanceState");
-        super.onSaveInstanceState(outState);
+    private List<String> tokenize(String input) {
+        List<String> tokens = new ArrayList<>();
+        Matcher m = Pattern.compile("\"([^\"]*)\"|([^\\s\\\\]+)").matcher(input);
+        while (m.find()) {
+            tokens.add(m.group(1) != null ? m.group(1) : m.group(2));
+            // group 1: "words inside quotation marks"  group 2: all_others
+        }
+        return tokens;
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        processInfo(null, "onResume");
+    private Map<String, View> parse_prepare_map() {
+        return new HashMap<String, View>() {{
+            put("-p", promptEditor);
+            put("-n", negativeEditor);
+            put("-m", model_spinner);
+            put("--steps", stepsEditor);
+            put("--seed", seedEditor);
+            put("--cfg-scale", cfgscaleEditor);
+            put("--width", widthEditor);
+            put("--height", heightEditor);
+            put("--sampling-method", sampler_spinner);
+            put("--scheduler", scheduler_spinner);
+            put("--use-taesd", taesdchecker);                   // pseudo option
+            put("--no-taesd", taesdchecker);                    // pseudo option (inversed state)
+            put("--use-taesdXL", taesdXLchecker);               // pseudo option
+            put("--no-taesdXL", taesdXLchecker);                // pseudo option (inversed state)
+            put("--vae-tiling", vaetilingchecker);              // real option
+            put("--diffusion-conv-direct", convdirectchecker);  // real option
+        }};
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        processInfo(null, "onStart");
+    private void parseShellScript(String input) {
+        Map<String, View> UIviewMap = parse_prepare_map();
+        List<String> tokens = tokenize(input);
+        for (int i = 0; i < tokens.size(); i++) {
+            String option = tokens.get(i);
+            if (UIviewMap.containsKey(option)) {
+                View v = UIviewMap.get(option);
+                if (v instanceof EditText) {
+                    ((EditText) v).setText(tokens.get(++i));
+                    // ((EditText) v).setTextColor(getColor(R.color.teal_700));
+                } else {
+                    if (v instanceof Spinner) {
+                        String optionValue = tokens.get(++i);
+                        if (v.equals(findViewById(R.id.model_spinner))) {
+                            optionValue = optionValue.substring(sdWorkPath.length() + 1);
+                        }
+                        //noinspection unchecked
+                        ArrayAdapter<String> adapter = (ArrayAdapter<String>) ((Spinner) v).getAdapter();
+                        if (adapter.getPosition(optionValue) >= 0) {
+                            ((Spinner) v).setSelection(adapter.getPosition(optionValue));
+                        }
+                    } else {
+                        if (v instanceof CheckBox) {
+                            ((CheckBox) v).setChecked((!option.contains("--no-")));
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        processInfo(null, "onRestart");
+    private void recursiveFolderBrowser(File directory) {
+        if (!directory.exists() || !directory.isDirectory()) {
+            Toast.makeText(this, "Folder does not exit", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        FileFilter navigationFilter = file -> {
+            if (file.isDirectory()) {
+                return true;
+            }
+            String name = file.getName();
+            return name.matches("(?i)^.*\\.jpg\\.sh$");
+        };
+        File[] items = directory.listFiles(navigationFilter);
+        if (items == null) items = new File[0];
+        Arrays.sort(items, (f1, f2) -> {
+            if (f1.isDirectory() && !f2.isDirectory()) return -1;
+            if (!f1.isDirectory() && f2.isDirectory()) return 1;
+            return f1.getName().compareToIgnoreCase(f2.getName());
+        });
+        List<String> displayNames = new ArrayList<>();
+        List<File> fileObjects = new ArrayList<>();
+        if (directory.getName().equals(sdWorkPath)) {
+            displayNames.add("📁 .. ");
+            fileObjects.add(directory.getParentFile());
+        }
+        for (File item : items) {
+            if (item.isDirectory()) {
+                displayNames.add("📁 " + item.getName() + "/");
+            } else {
+                displayNames.add("📄 " + item.getName());
+            }
+            fileObjects.add(item);
+        }
+        CharSequence[] itemsArray = displayNames.toArray(new CharSequence[0]);
+        if (currentDialog != null && currentDialog.isShowing()) {
+            currentDialog.dismiss();
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Path: " + directory.getName());
+        builder.setItems(itemsArray, (dialog, which) -> {
+            File selectedItem = fileObjects.get(which);
+            if (!directory.getName().equals(sdWorkPath) && which == 0) {
+                currentDirectory = selectedItem;
+                recursiveFolderBrowser(currentDirectory);
+                return;
+            }
+            if (selectedItem.isDirectory()) {
+                currentDirectory = selectedItem;
+                recursiveFolderBrowser(currentDirectory);
+            } else {
+                try {
+                    BufferedReader reader = new BufferedReader(new FileReader(selectedItem));
+                    String cmdline = reader.lines().collect(Collectors.joining());
+                    parseShellScript(cmdline);
+                } catch (IOException ignored) {
+                }
+            }
+        });
+        builder.setNegativeButton("Close", (dialog, which) -> {
+            currentDirectory = new File(sdWorkPath);
+        });
+        currentDialog = builder.create();
+        currentDialog.show();
     }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (process != null)
-            processInfo(null, "onStop");
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-*/
 }
+
+
+
+
+
+
