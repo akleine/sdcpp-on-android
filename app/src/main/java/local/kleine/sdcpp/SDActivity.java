@@ -1053,8 +1053,12 @@ public class SDActivity extends AppCompatActivity {
     }
 
     private void setupCheckBox(CheckBox checkBox, boolean initValue, CompoundButton.OnCheckedChangeListener listener) {
-        // initial setup, id-key pair must be defined in checkboxesMap
         String key = checkboxesMap.get(checkBox.getId());
+        if (key == null) {
+            // id-key pair must be defined in checkboxesMap
+            Toast.makeText(myActivity, "No key for " + getResources().getResourceEntryName(checkBox.getId()), Toast.LENGTH_LONG).show();
+            return;
+        }
         boolean current = checkBox.isChecked();
         boolean needed = vm.prefKeyExist(key) ? vm.getPrefBoolean(key, current) : initValue;
         if (current != needed)
@@ -1090,8 +1094,12 @@ public class SDActivity extends AppCompatActivity {
     }
 
     private void setupEditText(EditText editText) {
-        // initial setup, id-key pair must be defined in editsMap
         String key = editsMap.get(editText.getId());
+        if (key == null) {
+            // id-key pair must be defined in editsMap
+            Toast.makeText(myActivity, "No key for " + getResources().getResourceEntryName(editText.getId()), Toast.LENGTH_LONG).show();
+            return;
+        }
         String to = editText.getText().toString();
         String tn = vm.getPrefString(key, to);
         if (!tn.equals(to))
