@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
@@ -9,7 +10,7 @@
         android:id="@+id/wrapperView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="6dp">
+        android:paddingHorizontal="5dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -361,84 +362,177 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/details_animation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <CheckBox
-                    android:id="@+id/vaetiling"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/vae_tiling"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
-
-                <CheckBox
-                    android:id="@+id/convdirect"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/conv_direct"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="6dp"
+                android:layout_marginVertical="5dp"
+                android:layout_marginHorizontal="0dp"
                 android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/stringoptmsg"
+                <LinearLayout
+                    android:id="@+id/details_header"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/field_options"
-                    android:labelFor="@id/stringprompt"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
+                    android:layout_marginVertical="5dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="horizontal"
+                    tools:ignore="UseCompoundDrawables">
 
-                <EditText
-                    android:id="@+id/stringopt"
+                    <ImageView
+                        android:id="@+id/details_arrow"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/arrow_down_float"
+                        app:tint="@color/system_accent1_50"
+                        android:rotation="270.0"
+                        android:contentDescription="+-"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:id="@+id/details_caption"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="15dp"
+                        android:text="@string/more_settings_closed"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/details_wrapper"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/details_layout"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        tools:ignore="UselessParent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <CheckBox
+                                android:id="@+id/vaetiling"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/vae_tiling"
+                                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                            <CheckBox
+                                android:id="@+id/convdirect"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/conv_direct"
+                                android:textAppearance="?android:attr/textAppearanceMedium" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/stringoptmsg"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/field_options"
+                                android:labelFor="@id/stringprompt"
+                                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                            <EditText
+                                android:id="@+id/stringopt"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textMultiLine"
+                                android:labelFor="@id/stringpromptmsg"
+                                android:singleLine="false"
+                                android:text="@string/options"
+                                tools:ignore="Autofill,TouchTargetSizeCheck" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/details_footer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:layout_marginBottom="10dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:orientation="horizontal"
+                            tools:ignore="UseCompoundDrawables">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="start"
+                                android:src="@android:drawable/arrow_down_float"
+                                app:tint="@color/system_accent1_50"
+                                android:rotation="180.0"
+                                android:contentDescription="+-"
+                                tools:ignore="HardcodedText" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="15dp"
+                                android:text="@string/more_settings_open"
+                                android:textAppearance="?android:attr/textAppearanceMedium" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/submitButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:labelFor="@id/stringpromptmsg"
-                    android:singleLine="false"
-                    android:text="@string/options"
-                    tools:ignore="Autofill,TouchTargetSizeCheck" />
-            </LinearLayout>
+                    android:text="@string/submit"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="0dp"
+                    android:layout_marginHorizontal="15dp" />
 
-            <Button
-                android:id="@+id/submitButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/submit"
-                android:layout_marginTop="5dp"
-                android:layout_marginBottom="0dp"
-                android:layout_marginHorizontal="15dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="0dp"
-                android:layout_marginHorizontal="15dp">
-
-                <CheckBox
-                    android:id="@+id/writecmdchecker"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/write_cmdline"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
+                    android:orientation="horizontal"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginHorizontal="15dp">
 
-                <CheckBox
-                    android:id="@+id/writelogchecker"
-                    android:layout_width="0dp"
+                    <CheckBox
+                        android:id="@+id/writecmdchecker"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/write_cmdline"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <CheckBox
+                        android:id="@+id/writelogchecker"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/write_log"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/fileSelectButton"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/write_log"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
+                    android:layout_marginHorizontal="15dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="30dp"
+                    android:backgroundTint="@color/teal_200"
+                    android:text="@string/param_template" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
