@@ -42,6 +42,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ViewModelProvider;
@@ -49,10 +50,9 @@ import androidx.lifecycle.ViewModelProvider;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,11 +62,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.io.FileReader;
 
 public class SDActivity extends AppCompatActivity {
-
+    private File currentDirectory;
+    private AlertDialog currentDialog;
     public static final int EXIT_CODE_DO_RESTART = 1001;
-
     private SDViewModel vm = null;
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
@@ -342,7 +343,7 @@ public class SDActivity extends AppCompatActivity {
         setupLogWindow();
         Button fileSelectButton = findViewById(R.id.fileSelectButton);
         fileSelectButton.setOnClickListener(v ->
-                filePicker.launch(new String[]{"text/*"})
+                recursiveFolderBrowser(new File(sdWorkPath))
         );
         promptEditor = findViewById(R.id.stringprompt);
         setupEditText(promptEditor);
@@ -568,13 +569,8 @@ public class SDActivity extends AppCompatActivity {
                     cmdline = cmdline.replaceAll("\\s+(?=-(?!\\d))", " \\\\\n\t");
                     // adding some pseudo args as extra info for later file usage in parseShellScript()
                     cmdline = cmdline.concat(" \n exit # --end here--");
-                    if (taesdchecker.isChecked()) {
-                        cmdline = cmdline.concat("\n\t--use-taesd");
-                    }
-                    if (taesdXLchecker.isChecked()) {
-                        cmdline = cmdline.concat("\n\t--use-taesdXL");
-                    }
-                    //--
+                    cmdline = cmdline.concat(taesdchecker.isChecked() ? "\n\t--use-taesd" : "\n\t--no-taesd");
+                    cmdline = cmdline.concat(taesdXLchecker.isChecked() ? "\n\t--use-taesdXL" : "\n\t--no-taesdXL");
                     writer.write(cmdline);
                     writer.close();
                 } catch (IOException e) {
@@ -1127,23 +1123,6 @@ public class SDActivity extends AppCompatActivity {
         }
     };
 
-    private final ActivityResultLauncher<String[]> filePicker =
-            registerForActivityResult(
-                    new ActivityResultContracts.OpenDocument(),
-                    uri -> {
-                        if (uri != null) {
-                            try (InputStream input = getContentResolver().openInputStream(uri)) {
-                                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-                                String cmdline = reader.lines().collect(Collectors.joining());
-                                parseShellScript(cmdline);
-                            } catch (IOException e) {
-                                Toast.makeText(this, "Could not read file: " + e.getMessage(),
-                                        Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    }
-            );
-
     private List<String> tokenize(String input) {
         List<String> tokens = new ArrayList<>();
         Matcher m = Pattern.compile("\"([^\"]*)\"|([^\\s\\\\]+)").matcher(input);
@@ -1167,7 +1146,9 @@ public class SDActivity extends AppCompatActivity {
             put("--sampling-method", sampler_spinner);
             put("--scheduler", scheduler_spinner);
             put("--use-taesd", taesdchecker);                   // pseudo option
+            put("--no-taesd", taesdchecker);                    // pseudo option (inversed state)
             put("--use-taesdXL", taesdXLchecker);               // pseudo option
+            put("--no-taesdXL", taesdXLchecker);                // pseudo option (inversed state)
             put("--vae-tiling", vaetilingchecker);              // real option
             put("--diffusion-conv-direct", convdirectchecker);  // real option
         }};
@@ -1196,14 +1177,82 @@ public class SDActivity extends AppCompatActivity {
                         }
                     } else {
                         if (v instanceof CheckBox) {
-                            ((CheckBox) v).setChecked(true);        // to do: uncheck if missing option
+                            ((CheckBox) v).setChecked((!option.contains("--no-")));
                         }
                     }
                 }
             }
         }
     }
+
+    private void recursiveFolderBrowser(File directory) {
+        if (!directory.exists() || !directory.isDirectory()) {
+            Toast.makeText(this, "Folder does not exit", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        FileFilter navigationFilter = file -> {
+            if (file.isDirectory()) {
+                return true;
+            }
+            String name = file.getName();
+            return name.matches("(?i)^.*\\.jpg\\.sh$");
+        };
+        File[] items = directory.listFiles(navigationFilter);
+        if (items == null) items = new File[0];
+        Arrays.sort(items, (f1, f2) -> {
+            if (f1.isDirectory() && !f2.isDirectory()) return -1;
+            if (!f1.isDirectory() && f2.isDirectory()) return 1;
+            return f1.getName().compareToIgnoreCase(f2.getName());
+        });
+        List<String> displayNames = new ArrayList<>();
+        List<File> fileObjects = new ArrayList<>();
+        if (directory.getName().equals(sdWorkPath)) {
+            displayNames.add("📁 .. ");
+            fileObjects.add(directory.getParentFile());
+        }
+        for (File item : items) {
+            if (item.isDirectory()) {
+                displayNames.add("📁 " + item.getName() + "/");
+            } else {
+                displayNames.add("📄 " + item.getName());
+            }
+            fileObjects.add(item);
+        }
+        CharSequence[] itemsArray = displayNames.toArray(new CharSequence[0]);
+        if (currentDialog != null && currentDialog.isShowing()) {
+            currentDialog.dismiss();
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Path: " + directory.getName());
+        builder.setItems(itemsArray, (dialog, which) -> {
+            File selectedItem = fileObjects.get(which);
+            if (!directory.getName().equals(sdWorkPath) && which == 0) {
+                currentDirectory = selectedItem;
+                recursiveFolderBrowser(currentDirectory);
+                return;
+            }
+            if (selectedItem.isDirectory()) {
+                currentDirectory = selectedItem;
+                recursiveFolderBrowser(currentDirectory);
+            } else {
+                try {
+                    BufferedReader reader = new BufferedReader(new FileReader(selectedItem));
+                    String cmdline = reader.lines().collect(Collectors.joining());
+                    parseShellScript(cmdline);
+                } catch (IOException ignored) {
+                }
+            }
+        });
+        builder.setNegativeButton("Close", (dialog, which) -> {
+            currentDirectory = new File(sdWorkPath);
+        });
+        currentDialog = builder.create();
+        currentDialog.show();
+    }
 }
+
+
+
 
 
 
