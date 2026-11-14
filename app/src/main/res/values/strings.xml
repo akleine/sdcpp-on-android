@@ -35,5 +35,5 @@
     <string name="conv_direct">conv-direct</string>
     <string name="param_template">load params from script</string>
     <string name="more_settings_closed">more settings</string>
-    <string name="more_settings_open">less settings</string>
+    <string name="more_settings_opened">less settings</string>
 </resources>
