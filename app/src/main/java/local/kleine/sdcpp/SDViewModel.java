@@ -30,6 +30,7 @@ public class SDViewModel extends AndroidViewModel {
     private final SharedPreferences.Editor prefsEditor;
     private boolean prefsChanged = false;
     private Bitmap _image = null;
+    public boolean make_open = false;  // detailed settings are hidden in layout by default
 
     public SDViewModel (Application app) {
         super(app);
