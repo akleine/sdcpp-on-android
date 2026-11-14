@@ -3,8 +3,12 @@ package local.kleine.sdcpp;
 import android.app.Application;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+
+import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 import androidx.lifecycle.AndroidViewModel;
+
+import java.util.HashMap;
 
 public class SDViewModel extends AndroidViewModel {
     // EditText
@@ -25,6 +29,10 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeyLog         = "prefs_write_log";
     public static final String prefsKeyVaeTiling   = "prefs_vae_tiling";
     public static final String prefsKeyConvDirect  = "prefs_conv_direct";
+
+    // caches previous values, since SharedPreferences.Editor
+    // does not have methods to get temporary values from its memory
+    private final HashMap<String, String> prefCache = new HashMap<>();
 
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
@@ -62,11 +70,11 @@ public class SDViewModel extends AndroidViewModel {
             prefsChanged = false;
     }
 
-    public boolean prefKeyExist(String prefName) {
+    public boolean prefKeyExist(@NonNull String prefName) {
         return prefs.contains(prefName);
     }
 
-    public String getPrefString(String prefName, String defValue) {
+    public String getPrefString(@NonNull String prefName, String defValue) {
         String value;
         try {
             value = prefs.getString(prefName, defValue);
@@ -80,11 +88,12 @@ public class SDViewModel extends AndroidViewModel {
         return value;
     }
 
-    public void setPrefString(String prefName, String value) {
-        boolean needWrite = !prefs.contains(prefName);  // force write 1st time
-        if (!needWrite) {
+    public void setPrefString(@NonNull String prefName, final @NonNull String value) {
+        boolean needWrite = false;
+        String cached = prefCache.get(prefName);
+        if (cached == null && prefs.contains(prefName)) {
             try {
-                needWrite = !prefs.getString(prefName, "").equals(value);
+                cached = prefs.getString(prefName, "");
             } catch (Exception ignored) {
                 // something was wrong, clearing old value
                 // and resetting it from scratch
@@ -92,13 +101,15 @@ public class SDViewModel extends AndroidViewModel {
                 needWrite = true;
             }
         }
+        needWrite |= !value.equals(cached);
         if (needWrite) {
             prefsEditor.putString(prefName, value);
             prefsChanged = true;
+            prefCache.put(prefName, value);
         }
     }
 
-    public boolean getPrefBoolean(String prefName, boolean defValue) {
+    public boolean getPrefBoolean(@NonNull String prefName, boolean defValue) {
         boolean value;
         try {
             value = prefs.getBoolean(prefName, defValue);
@@ -110,19 +121,23 @@ public class SDViewModel extends AndroidViewModel {
         return value;
     }
 
-    public void setPrefBoolean(String prefName, boolean value) {
-        boolean needWrite = !prefs.contains(prefName);  // force write 1st time
-        if (!needWrite) {
+    public void setPrefBoolean(@NonNull String prefName, final boolean value) {
+        boolean needWrite = false;
+        String cached = prefCache.get(prefName);
+        if (cached == null && prefs.contains(prefName)) {
             try {
-                needWrite = prefs.getBoolean(prefName, false) != value;
+                cached = Boolean.toString(prefs.getBoolean(prefName, false));
             } catch (Exception ignored) {
                 prefsEditor.remove(prefName);
                 needWrite = true;
             }
         }
+        final String newvalue = Boolean.toString(value);
+        needWrite |= !newvalue.equals(cached);
         if (needWrite) {
             prefsEditor.putBoolean(prefName, value);
             prefsChanged = true;
+            prefCache.put(prefName, newvalue);
         }
     }
 
