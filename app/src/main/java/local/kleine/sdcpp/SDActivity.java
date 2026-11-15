@@ -433,7 +433,7 @@ public class SDActivity extends AppCompatActivity {
             wlp.height = vm.make_open ? ViewGroup.LayoutParams.WRAP_CONTENT : 0;
             detailsWrapper.setLayoutParams(wlp);
             detailsArrow.setRotation(vm.make_open ? 0 : 270);
-            detailsCaption.setText(getString(vm.make_open ? R.string.more_settings_opened    : R.string.more_settings_closed));
+            detailsCaption.setText(getString(vm.make_open ? R.string.more_settings_opened : R.string.more_settings_closed));
         };
         detailsHeader.setOnClickListener(detailsTogggler);
         detailsFooter.setOnClickListener(detailsTogggler);
@@ -590,8 +590,14 @@ public class SDActivity extends AppCompatActivity {
                     .replaceAll("(^" + anySpace + "+)|(" + anySpace + "+$)", "")
                     // arg1 "arg2"  "arg3 with spaces"   ""
                     .split(anySpace + "+(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+            for (int i = 0; i < args.length; i++) {
+                if (("-o".equals(args[i]) || "--output".equals(args[i])) && i < args.length - 1) {
+                    i++; // get next arg, remove dangerous chars and select a JPG file
+                    args[i] = args[i].replaceAll("[^a-zA-Z0-9._-]", "") + ".jpg";
+                    localOutputImagePath = sdWorkPath + "/" + args[i];
+                }
+            }
             if (!args[0].isEmpty()) arguments.addAll(Arrays.asList(args));
-
             if (writeCmdlineChecker.isChecked()) {
                 try {
                     BufferedWriter writer = new BufferedWriter(new FileWriter(localOutputImagePath + ".sh"));
@@ -619,6 +625,9 @@ public class SDActivity extends AppCompatActivity {
                     cmdline = cmdline.concat(" \n exit # --end here--");
                     cmdline = cmdline.concat(taesdchecker.isChecked() ? "\n\t--use-taesd" : "\n\t--no-taesd");
                     cmdline = cmdline.concat(taesdXLchecker.isChecked() ? "\n\t--use-taesdXL" : "\n\t--no-taesdXL");
+                    cmdline = cmdline.concat(convdirectchecker.isChecked() ? "" : "\n\t--no-conv-direct");
+                    cmdline = cmdline.concat(vaetilingchecker.isChecked() ? "" : "\n\t--no-vae-tiling");
+                    cmdline = cmdline.concat(embeddchecker.isChecked() ? "" : "\n\t--no-embeddings");
                     writer.write(cmdline);
                     writer.close();
                 } catch (IOException e) {
@@ -1195,10 +1204,14 @@ public class SDActivity extends AppCompatActivity {
             put("--scheduler", scheduler_spinner);
             put("--use-taesd", taesdchecker);                   // pseudo option
             put("--no-taesd", taesdchecker);                    // pseudo option (inversed state)
-            put("--use-taesdXL", taesdXLchecker);               // pseudo option
-            put("--no-taesdXL", taesdXLchecker);                // pseudo option (inversed state)
+            put("--use-taesdXL", taesdXLchecker);               // ps
+            put("--no-taesdXL", taesdXLchecker);                // ps (inv)
             put("--vae-tiling", vaetilingchecker);              // real option
-            put("--diffusion-conv-direct", convdirectchecker);  // real option
+            put("--no-vae-tiling", vaetilingchecker);           // ps
+            put("--diffusion-conv-direct", convdirectchecker);  // real
+            put("--no-diffusion-conv-direct", convdirectchecker); // ps (inv)
+            put("--use-embeddings", embeddchecker);             // ps
+            put("--no-embeddings", embeddchecker);              // ps (inv)
         }};
     }
 
@@ -1211,7 +1224,6 @@ public class SDActivity extends AppCompatActivity {
                 View v = UIviewMap.get(option);
                 if (v instanceof EditText) {
                     ((EditText) v).setText(tokens.get(++i));
-                    // ((EditText) v).setTextColor(getColor(R.color.teal_700));
                 } else {
                     if (v instanceof Spinner) {
                         String optionValue = tokens.get(++i);
@@ -1235,7 +1247,7 @@ public class SDActivity extends AppCompatActivity {
 
     private void recursiveFolderBrowser(File directory) {
         if (!directory.exists() || !directory.isDirectory()) {
-            Toast.makeText(this, "Folder does not exit", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.err_folder, Toast.LENGTH_SHORT).show();
             return;
         }
         FileFilter navigationFilter = file -> {
@@ -1254,7 +1266,7 @@ public class SDActivity extends AppCompatActivity {
         });
         List<String> displayNames = new ArrayList<>();
         List<File> fileObjects = new ArrayList<>();
-        if (!directory.getName().equals(sdWorkPath)) {
+        if (!directory.getAbsolutePath().equals(sdWorkPath)) {
             displayNames.add("📁 .. ");
             fileObjects.add(directory.getParentFile());
         }
@@ -1271,10 +1283,10 @@ public class SDActivity extends AppCompatActivity {
             currentDialog.dismiss();
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Path: " + directory.getName());
+        builder.setTitle(R.string.path + directory.getName());
         builder.setItems(itemsArray, (dialog, which) -> {
             File selectedItem = fileObjects.get(which);
-            if (!directory.getName().equals(sdWorkPath) && which == 0) {
+            if (!directory.getAbsolutePath().equals(sdWorkPath) && which == 0) {
                 currentDirectory = selectedItem;
                 recursiveFolderBrowser(currentDirectory);
                 return;
@@ -1291,16 +1303,8 @@ public class SDActivity extends AppCompatActivity {
                 }
             }
         });
-        builder.setNegativeButton("Close", (dialog, which) -> {
-            currentDirectory = new File(sdWorkPath);
-        });
+        builder.setNegativeButton( R.string.close_dialog, (dialog, which) -> currentDirectory = new File(sdWorkPath));
         currentDialog = builder.create();
         currentDialog.show();
     }
 }
-
-
-
-
-
-
