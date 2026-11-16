@@ -3,8 +3,12 @@ package local.kleine.sdcpp;
 import android.app.Application;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+
+import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 import androidx.lifecycle.AndroidViewModel;
+
+import java.util.HashMap;
 
 public class SDViewModel extends AndroidViewModel {
     // EditText
@@ -25,11 +29,19 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeyLog         = "prefs_write_log";
     public static final String prefsKeyVaeTiling   = "prefs_vae_tiling";
     public static final String prefsKeyConvDirect  = "prefs_conv_direct";
+    /*
+    ** caches previous values, since SharedPreferences.Editor
+    ** does not have methods to get temporary values from its memory
+    **
+    ** single Map<String, String> is used for booleans as well
+    ** to guaranty uniqueness of keys
+    **/
+    private final HashMap<String, String> prefCache = new HashMap<>();
 
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
     private boolean prefsChanged = false;
-    private Bitmap _image = null;
+    private Bitmap cached_image = null;
     public volatile boolean make_open = false;  // detailed settings are hidden in layout by default
 
     public SDViewModel (Application app) {
@@ -39,91 +51,127 @@ public class SDViewModel extends AndroidViewModel {
     }
 
     public Bitmap getBitmap() {
-        return (_image == null || _image.isRecycled()) ? null : _image;
+        return (cached_image == null || cached_image.isRecycled()) ? null : cached_image;
     }
     public void setBitmap(Bitmap b) {
-        if (_image != null && !_image.isRecycled())
-            _image.recycle();
-        _image = (b == null || b.isRecycled()) ? null : b;
+        if (cached_image != null && !cached_image.isRecycled())
+            cached_image.recycle();
+        cached_image = (b == null || b.isRecycled()) ? null : b;
     }
     @Override
     protected void onCleared() {
         super.onCleared();
         // explicitly using recycle() to avoid delays of garbage collector
-        if (_image != null) {
-            if (!_image.isRecycled())
-                _image.recycle();
-            _image = null;
+        if (cached_image != null) {
+            if (!cached_image.isRecycled())
+                cached_image.recycle();
+            cached_image = null;
         }
         savePreferences();
     }
 
+    /*
+    ** commit() is used instead of apply() because savePreferences()
+    ** is called from onPause() and delayed apply() might not write data
+    ** before the app will be closed
+    **/
     public void savePreferences () {
         if (prefsChanged && prefsEditor != null && prefsEditor.commit())
             prefsChanged = false;
     }
 
-    public boolean prefKeyExist(String prefName) {
-        return prefs.contains(prefName);
+    public boolean prefKeyExist(final @NonNull String prefName) {
+        return prefCache.containsKey(prefName) || prefs.contains(prefName);
     }
 
-    public String getPrefString(String prefName, String defValue) {
-        String value;
-        try {
-            value = prefs.getString(prefName, defValue);
-        } catch (Exception ignored) {
-            // deleting erroneous element and returning default
-            // as if it doesn't exist
-            prefsEditor.remove(prefName);
-            prefsChanged = true;
-            value = defValue;
+    public String getPrefString(final @NonNull String prefName, final @NonNull String defValue) {
+        String value = prefCache.get(prefName);
+        if (value == null) {  // not cached yet
+            try {
+                value = prefs.getString(prefName, defValue);  // defValue if not exist
+            } catch (Exception ignored) {
+                // deleting erroneous element and returning default
+                // as if it doesn't exist
+                prefsEditor.remove(prefName);
+                prefsChanged = true;
+                // masking erroneous value by cache
+                // to not reread it in every get() until it will be committed
+                prefCache.put(prefName, defValue);
+                value = defValue;
+            }
         }
+        // value is either prefCache(prefName), prefs(prefName) or defValue
         return value;
     }
 
-    public void setPrefString(String prefName, String value) {
-        boolean needWrite = !prefs.contains(prefName);  // force write 1st time
-        if (!needWrite) {
+    public void setPrefString(final @NonNull String prefName, final @NonNull String value) {
+        boolean needWrite = false;
+        String cached = prefCache.get(prefName);
+        if (cached == null && prefs.contains(prefName)) {
             try {
-                needWrite = !prefs.getString(prefName, "").equals(value);
+                cached = prefs.getString(prefName, "");  // defValue is bypassed with contains()
             } catch (Exception ignored) {
                 // something was wrong, clearing old value
-                // and resetting it from scratch
+                // and forcibly resetting it from scratch
                 prefsEditor.remove(prefName);
                 needWrite = true;
             }
         }
+        // cached is either prefCache(prefName), prefs(prefName) or null if no valid value
+        needWrite |= !value.equals(cached);
         if (needWrite) {
             prefsEditor.putString(prefName, value);
             prefsChanged = true;
+            prefCache.put(prefName, value);
         }
     }
 
-    public boolean getPrefBoolean(String prefName, boolean defValue) {
+    final private static String stringTrue = Boolean.toString(true);
+
+    public boolean getPrefBoolean(final @NonNull String prefName, final boolean defValue) {
         boolean value;
-        try {
-            value = prefs.getBoolean(prefName, defValue);
-        } catch (Exception ignored) {
-            prefsEditor.remove(prefName);
-            prefsChanged = true;
-            value = defValue;
+        final String cached = prefCache.get(prefName);
+        if (cached != null) {
+            value = stringTrue.equals(cached);
+        } else if (prefs.contains(prefName)) {
+            try {
+                value = prefs.getBoolean(prefName, defValue);  // defValue if not exist
+            } catch (Exception ignored) {
+                // deleting erroneous element and returning default
+                // as if it doesn't exist
+                prefsEditor.remove(prefName);
+                prefsChanged = true;
+                // masking erroneous value by cache
+                // to not reread it in every get() until it will be committed
+                prefCache.put(prefName, Boolean.toString(defValue));
+                value = defValue;
+            }
+        } else {
+            value = defValue;  // no cache, no prefs
         }
+        // value is either prefCache(prefName), prefs(prefName) or defValue
         return value;
     }
 
-    public void setPrefBoolean(String prefName, boolean value) {
-        boolean needWrite = !prefs.contains(prefName);  // force write 1st time
-        if (!needWrite) {
+    public void setPrefBoolean(final @NonNull String prefName, final boolean value) {
+        boolean needWrite = false;
+        String cached = prefCache.get(prefName);
+        if (cached == null && prefs.contains(prefName)) {
             try {
-                needWrite = prefs.getBoolean(prefName, false) != value;
+                cached = Boolean.toString(prefs.getBoolean(prefName, false));
             } catch (Exception ignored) {
+                // same as in setPrefString()
                 prefsEditor.remove(prefName);
                 needWrite = true;
             }
         }
+        // cached is prefCache, prefs or null (not exist or error)
+        final String strValue = Boolean.toString(value);
+        needWrite |= !strValue.equals(cached);
         if (needWrite) {
             prefsEditor.putBoolean(prefName, value);
             prefsChanged = true;
+            prefCache.put(prefName, strValue);
         }
     }
 
