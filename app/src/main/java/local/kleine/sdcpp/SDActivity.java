@@ -47,15 +47,12 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ViewModelProvider;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -64,14 +61,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.io.FileReader;
 
 public class SDActivity extends AppCompatActivity {
-    private File currentDirectory;
-    private AlertDialog currentDialog;
     public static final int EXIT_CODE_DO_RESTART = 1001;
     private SDViewModel vm = null;
     private ArrayList<String> logList = null;
@@ -84,7 +75,7 @@ public class SDActivity extends AppCompatActivity {
     private final static String SDlibopenCL = "libsdopenCL.so";
     private final static String SDlib = "libsd.so";
     private File nativeLibDir;
-    private final String sdWorkPath = android.os.Environment.
+    protected final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
             getAbsolutePath();
     private final static String anySpace = /* Build.VERSION.SDK_INT < Build.VERSION_CODES.N ?
@@ -346,10 +337,10 @@ public class SDActivity extends AppCompatActivity {
             }
         }
         setupLogWindow();
+
+
         Button fileSelectButton = findViewById(R.id.fileSelectButton);
-        fileSelectButton.setOnClickListener(v ->
-                recursiveFolderBrowser(new File(sdWorkPath))
-        );
+        fileSelectButton.setOnClickListener(new SDUIoptionsLoader());
         promptEditor = findViewById(R.id.stringprompt);
         setupEditText(promptEditor);
         promptEditor.addTextChangedListener(createTextWatcher());
@@ -622,12 +613,13 @@ public class SDActivity extends AppCompatActivity {
                     String cmdline = String.join(" ", args);
                     cmdline = cmdline.replaceAll("\\s+(?=-(?!\\d))", " \\\\\n\t");
                     // adding some pseudo args as extra info for later file usage in parseShellScript()
-                    cmdline = cmdline.concat(" \n exit # --end here--");
+                    cmdline = cmdline.concat(" \n exit # --script ends here--");
                     cmdline = cmdline.concat(taesdchecker.isChecked() ? "\n\t--use-taesd" : "\n\t--no-taesd");
                     cmdline = cmdline.concat(taesdXLchecker.isChecked() ? "\n\t--use-taesdXL" : "\n\t--no-taesdXL");
                     cmdline = cmdline.concat(convdirectchecker.isChecked() ? "" : "\n\t--no-conv-direct");
                     cmdline = cmdline.concat(vaetilingchecker.isChecked() ? "" : "\n\t--no-vae-tiling");
                     cmdline = cmdline.concat(embeddchecker.isChecked() ? "" : "\n\t--no-embeddings");
+                    cmdline = cmdline.concat("\n\t--extra-options \"" + optionsEditor.getText().toString()) + "\"";
                     writer.write(cmdline);
                     writer.close();
                 } catch (IOException e) {
@@ -1187,132 +1179,4 @@ public class SDActivity extends AppCompatActivity {
                 vm.setPrefString(key, ((EditText) v).getText().toString());
         }
     };
-
-    private List<String> tokenize(String input) {
-        List<String> tokens = new ArrayList<>();
-        Matcher m = Pattern.compile("\"([^\"]*)\"|([^\\s\\\\]+)").matcher(input);
-        while (m.find()) {
-            tokens.add(m.group(1) != null ? m.group(1) : m.group(2));
-            // group 1: "words inside quotation marks"  group 2: all_others
-        }
-        return tokens;
-    }
-
-    private Map<String, View> parse_prepare_map() {
-        return new HashMap<String, View>() {{
-            put("-p", promptEditor);
-            put("-n", negativeEditor);
-            put("-m", model_spinner);
-            put("--steps", stepsEditor);
-            put("--seed", seedEditor);
-            put("--cfg-scale", cfgscaleEditor);
-            put("--width", widthEditor);
-            put("--height", heightEditor);
-            put("--sampling-method", sampler_spinner);
-            put("--scheduler", scheduler_spinner);
-            put("--use-taesd", taesdchecker);                   // pseudo option
-            put("--no-taesd", taesdchecker);                    // pseudo option (inversed state)
-            put("--use-taesdXL", taesdXLchecker);               // ps
-            put("--no-taesdXL", taesdXLchecker);                // ps (inv)
-            put("--vae-tiling", vaetilingchecker);              // real option
-            put("--no-vae-tiling", vaetilingchecker);           // ps
-            put("--diffusion-conv-direct", convdirectchecker);  // real
-            put("--no-diffusion-conv-direct", convdirectchecker); // ps (inv)
-            put("--use-embeddings", embeddchecker);             // ps
-            put("--no-embeddings", embeddchecker);              // ps (inv)
-        }};
-    }
-
-    private void parseShellScript(String input) {
-        Map<String, View> UIviewMap = parse_prepare_map();
-        List<String> tokens = tokenize(input);
-        for (int i = 0; i < tokens.size(); i++) {
-            String option = tokens.get(i);
-            if (UIviewMap.containsKey(option)) {
-                View v = UIviewMap.get(option);
-                if (v instanceof EditText) {
-                    ((EditText) v).setText(tokens.get(++i));
-                } else {
-                    if (v instanceof Spinner) {
-                        String optionValue = tokens.get(++i);
-                        if (v.equals(findViewById(R.id.model_spinner))) {
-                            optionValue = optionValue.substring(sdWorkPath.length() + 1);
-                        }
-                        //noinspection unchecked
-                        ArrayAdapter<String> adapter = (ArrayAdapter<String>) ((Spinner) v).getAdapter();
-                        if (adapter.getPosition(optionValue) >= 0) {
-                            ((Spinner) v).setSelection(adapter.getPosition(optionValue));
-                        }
-                    } else {
-                        if (v instanceof CheckBox) {
-                            ((CheckBox) v).setChecked((!option.contains("--no-")));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void recursiveFolderBrowser(File directory) {
-        if (!directory.exists() || !directory.isDirectory()) {
-            Toast.makeText(this, R.string.err_folder, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        FileFilter navigationFilter = file -> {
-            if (file.isDirectory()) {
-                return true;
-            }
-            String name = file.getName();
-            return name.matches("(?i)^.*\\.jpg\\.sh$");
-        };
-        File[] items = directory.listFiles(navigationFilter);
-        if (items == null) items = new File[0];
-        Arrays.sort(items, (f1, f2) -> {
-            if (f1.isDirectory() && !f2.isDirectory()) return -1;
-            if (!f1.isDirectory() && f2.isDirectory()) return 1;
-            return f1.getName().compareToIgnoreCase(f2.getName());
-        });
-        List<String> displayNames = new ArrayList<>();
-        List<File> fileObjects = new ArrayList<>();
-        if (!directory.getAbsolutePath().equals(sdWorkPath)) {
-            displayNames.add("📁 .. ");
-            fileObjects.add(directory.getParentFile());
-        }
-        for (File item : items) {
-            if (item.isDirectory()) {
-                displayNames.add("📁 " + item.getName() + "/");
-            } else {
-                displayNames.add("📄 " + item.getName());
-            }
-            fileObjects.add(item);
-        }
-        CharSequence[] itemsArray = displayNames.toArray(new CharSequence[0]);
-        if (currentDialog != null && currentDialog.isShowing()) {
-            currentDialog.dismiss();
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.path + directory.getName());
-        builder.setItems(itemsArray, (dialog, which) -> {
-            File selectedItem = fileObjects.get(which);
-            if (!directory.getAbsolutePath().equals(sdWorkPath) && which == 0) {
-                currentDirectory = selectedItem;
-                recursiveFolderBrowser(currentDirectory);
-                return;
-            }
-            if (selectedItem.isDirectory()) {
-                currentDirectory = selectedItem;
-                recursiveFolderBrowser(currentDirectory);
-            } else {
-                try {
-                    BufferedReader reader = new BufferedReader(new FileReader(selectedItem));
-                    String cmdline = reader.lines().collect(Collectors.joining());
-                    parseShellScript(cmdline);
-                } catch (IOException ignored) {
-                }
-            }
-        });
-        builder.setNegativeButton( R.string.close_dialog, (dialog, which) -> currentDirectory = new File(sdWorkPath));
-        currentDialog = builder.create();
-        currentDialog.show();
-    }
 }

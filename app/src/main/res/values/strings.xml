@@ -36,7 +36,5 @@
     <string name="param_template">load params from script</string>
     <string name="more_settings_closed">more settings</string>
     <string name="more_settings_opened">less settings</string>
-    <string name="err_folder">Folder does not exist</string>
     <string name="close_dialog">close</string>
-    <string name="path">Path: </string>
 </resources>
