@@ -15,7 +15,7 @@ See Build Instructions below. You may need to allow 'Install from unknown source
 
 ## Usage Guide: 
 
-* Download at least one valid stable diffusion model file on your device. For details see:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/sd.md    
+* Download at least one valid stable diffusion model file on your device. For details see:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/sd.md
 Download these safetensors or ckpt files using your favorite web browser and store them below 'Download', but you may want to create a dedicated folder (e.g., 'Download/Models') to stay organized.
 
 * Grant permissions: Confirm the required storage permissions (see Security & Privacy Note below).
@@ -72,9 +72,12 @@ This app requires extensive storage permissions to function. It needs to read ac
 
 ## Native code:
 
-**IMPORTANT**: this project contains compiled code forked from sd.cpp (```stable-diffusion.cpp-JetsonNano```), see here: https://github.com/akleine/stable-diffusion.cpp-JetsonNano/commit/979d9b7 .
-You are encouraged to build the sd executable yourself using Android NDK, see the sd.cpp build documentation:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md .
-The binaries were built in Termux using the following commands:
+**IMPORTANT**: this project contains some compiled code. You are encouraged to build the sd executables yourself using Android NDK, see the sd.cpp build documentation:  https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md .
+
+### 1. libsd.so (for CPU)
+
+libsd.so is small and quick sd.cpp executable library for CPU. It is *forked* from sd.cpp (```stable-diffusion.cpp-JetsonNano```), see here: https://github.com/akleine/stable-diffusion.cpp-JetsonNano/commit/979d9b7 .
+The binaries (for 32 bit and for 64 bit) were built in Termux using the following commands:
 
 ```sh
 cmake .. -G Ninja \
@@ -91,10 +94,10 @@ strip sd
 
 After compiling rename the executables from 'sd' or 'sd-cli' to 'libsd.so' and place it in ```app/src/main/jniLibs/arm64-v8a```  respectively  ```app/src/main/jniLibs/armeabi-v7a```  folder. (This renaming is needed due android restrictions.)
 
-## Optional use of an openCL driver:
+### 2. libsdopenCL.so (for Adreno GPU)
 
-**IMPORTANT**: this project contains compiled code from sd.cpp (```stable-diffusion.cpp```), see here: https://github.com/leejet/stable-diffusion.cpp/commit/a0c8508 .
-As mentioned you are encouraged to build the sd-cli executable yourself.  At first get a current commit from https://github.com/leejet/stable-diffusion.cpp and read more about using openCL (for Adreno GPU) here: https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md . Then change the above script to:
+libsdopenCL.so is built from from sd.cpp, see here: https://github.com/leejet/stable-diffusion.cpp/commit/a0c8508 .
+As mentioned you are encouraged to build the sd-cli (64 bit) executable yourself.  At first get a current commit from https://github.com/leejet/stable-diffusion.cpp and read more about using openCL (for Adreno GPU) here: https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/build.md . Then change the above script to:
 
 ```sh
 cmake .. -G Ninja \
@@ -112,3 +115,8 @@ mv sd-cli libsdopenCL.so
 ```
 
 After compiling rename the executable from 'sd-cli' to 'libsdopenCL.so' and place it near to 'libsd.so' . During execution, this app searches for a file named 'libsdopenCL.so' and suggest using it.
+
+
+### 3. libchkopenCL.so
+
+libchkopenCL.so is a tiny lib for detecting an openCL driver, see ```native/opencltest.c``` .

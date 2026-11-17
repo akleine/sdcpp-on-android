@@ -28,6 +28,7 @@ public class SDUIoptionsLoader implements View.OnClickListener {
     private File currentDirectory;
     private AlertDialog currentDialog;
     final private static Map<String, Integer> optionsUIIdMap = new HashMap<>();
+
     static {
         //-- real options of sd.cpp --
         optionsUIIdMap.put("-p", R.id.stringprompt);
@@ -42,16 +43,23 @@ public class SDUIoptionsLoader implements View.OnClickListener {
         optionsUIIdMap.put("--scheduler", R.id.scheduler_spinner);
         //-- pseudo options for setting UI elements --
         optionsUIIdMap.put("--use-taesd", R.id.taesdchecker);
-        optionsUIIdMap.put("--no-taesd", R.id.taesdchecker);
+        optionsUIIdMap.put("--no-taesd", R.id.taesdchecker); // "--no-" == inversed
         optionsUIIdMap.put("--use-taesdXL", R.id.taesdXLchecker);
         optionsUIIdMap.put("--no-taesdXL", R.id.taesdXLchecker);
         optionsUIIdMap.put("--vae-tiling", R.id.vaetiling);
         optionsUIIdMap.put("--no-vae-tiling", R.id.vaetiling);
         optionsUIIdMap.put("--diffusion-conv-direct", R.id.convdirect);
-        optionsUIIdMap.put("--no-diffusion-conv-direct", R.id.convdirect); // inversed
+        optionsUIIdMap.put("--no-diffusion-conv-direct", R.id.convdirect);
         optionsUIIdMap.put("--use-embeddings", R.id.embeddchecker);
         optionsUIIdMap.put("--no-embeddings", R.id.embeddchecker);
         optionsUIIdMap.put("--extra-options", R.id.stringopt);
+        // different option but selection is made via the same spinner:
+        optionsUIIdMap.put("--diffusion-model", R.id.model_spinner);
+        //-- usual options for compatibilty with "foreign" scripts --
+        optionsUIIdMap.put("--prompt", R.id.stringprompt);
+        optionsUIIdMap.put("--negative-prompt", R.id.stringnegprompt);
+        optionsUIIdMap.put("-W", R.id.stringwidth);
+        optionsUIIdMap.put("-H", R.id.stringheight);
     }
 
     @Override

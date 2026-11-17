@@ -556,15 +556,10 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--type");
                 arguments.add(selectedModelfile.toUpperCase().contains("SDXS") ? "f16" : "q4_0");
                 // "f16" is optimal for huge VRAM or very small models like SDXS
-                if (selectedModelfile.toUpperCase().contains("MINIT2I")) {
+                if (selectedModelfile.toUpperCase().contains("MINIT2I") || selectedModelfile.toUpperCase().contains("ZIMAGE")) {
                     arguments.set(1, "--diffusion-model"); // replace "-m"
-                    if (!helperPath.isEmpty()) {
-                        arguments.add("--t5xxl");
-                        arguments.add(helperPath + "/minit2i-text-encoder.safetensors");
-                        // hard wired as *initial approach* for MiniT2I experiments
-                        arguments.add("--type");
-                        arguments.add("f32");
-                    }
+                    // Currently other needed options like "--t5xxl" or "--llm" or "--vae"
+                    // must be entered via "--extra-eptions", see SDUIoptionsLoader.java
                 }
             }
             File file = new File(nativeLibDir, sdFileName);
