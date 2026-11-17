@@ -29,6 +29,11 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeyLog         = "prefs_write_log";
     public static final String prefsKeyVaeTiling   = "prefs_vae_tiling";
     public static final String prefsKeyConvDirect  = "prefs_conv_direct";
+    // Spinner
+    public static final String prefsKeyModel     = "prefs_model";
+    public static final String prefsKeySampler   = "prefs_sampler";
+    public static final String prefsKeyScheduler = "prefs_scheduler";
+    public static final String prefsKeyExt       = "prefs_ext";
     /*
     ** caches previous values, since SharedPreferences.Editor
     ** does not have methods to get temporary values from its memory
@@ -84,6 +89,7 @@ public class SDViewModel extends AndroidViewModel {
         return prefCache.containsKey(prefName) || prefs.contains(prefName);
     }
 
+    @NonNull
     public String getPrefString(final @NonNull String prefName, final @NonNull String defValue) {
         String value = prefCache.get(prefName);
         if (value == null) {  // not cached yet
