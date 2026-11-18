@@ -68,8 +68,8 @@ public class SDActivity extends AppCompatActivity {
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
     private final Activity myActivity;
-    private String sdProgramPath, selectedModelfile, selectedSampler, selectedScheduler, taesdModel, taesdXLModel, helperPath,
-            libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
+    private String selectedModelfile, selectedSampler, selectedScheduler, selectedExt, taesdModel, taesdXLModel;
+    private String sdProgramPath, helperPath, libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
     private final static String libVendorPath = "/vendor/lib64";  // no support possible for 32 bit with openCL
     private final static String ChklibopenCL = "libchkopenCL.so";
     private final static String SDlibopenCL = "libsdopenCL.so";
@@ -92,6 +92,7 @@ public class SDActivity extends AppCompatActivity {
     private Spinner sampler_spinner;
     private Spinner scheduler_spinner;
     private Spinner model_spinner;
+    private Spinner ext_spinner;
     private ImageView imageOutputView;
     private ArrayAdapter<String> arrayAdapter;
     private static final String[] samplerArr = {
@@ -386,6 +387,9 @@ public class SDActivity extends AppCompatActivity {
         scheduler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         scheduler_spinner.setAdapter(scheduler_adapter);
 
+        ext_spinner = findViewById(R.id.ext_spinner);
+        setupSpinner(ext_spinner);
+
         // animator setup
         LinearLayout animatedLayout = findViewById(R.id.details_animation);
         View detailsHeader = findViewById(R.id.details_header);
@@ -483,7 +487,8 @@ public class SDActivity extends AppCompatActivity {
                 prompt = "something";
             }
             String negative = negativeEditor.getText().toString();
-            String localOutputImagePath = sdWorkPath + "/output" + (System.currentTimeMillis() / 1000L) + ".jpg";
+            String localOutputImagePath = sdWorkPath + "/output" + (System.currentTimeMillis() / 1000L)
+                    + "." + (selectedExt == null ? "jpg" : selectedExt);
             String taesdoption = "";
             if (taesdchecker.isChecked()) {
                 taesdoption = taesdModel;
@@ -579,7 +584,8 @@ public class SDActivity extends AppCompatActivity {
             for (int i = 0; i < args.length; i++) {
                 if (("-o".equals(args[i]) || "--output".equals(args[i])) && i < args.length - 1) {
                     i++; // get next arg, remove dangerous chars and select a JPG file
-                    args[i] = args[i].replaceAll("[^a-zA-Z0-9._-]", "") + ".jpg";
+                    args[i] = args[i].replaceAll("[^a-zA-Z0-9._-]", "")
+                            + "." + (selectedExt == null ? "jpg" : selectedExt);
                     localOutputImagePath = sdWorkPath + "/" + args[i];
                 }
             }
@@ -601,7 +607,7 @@ public class SDActivity extends AppCompatActivity {
                             .replace("\\", "\\\\")
                             .replace("\"", "\\\"")
                             + "\"";  // negative prompt
-                    args[8] = "output.jpg";
+                    args[8] = "output." + (selectedExt == null ? "jpg" : selectedExt);
                     args[10] = "\"" + args[10] + "\"";
                     args[12] = "\"" + args[12] + "\"";
                     args[16] = "\"" + args[16] + "\"";
@@ -1050,22 +1056,52 @@ public class SDActivity extends AppCompatActivity {
                     }
                     //*/
                 }
-            } else {
-                if (parent.getId() == R.id.sampler_spinner) {
-                    selectedSampler = samplerList.get(position);
-                    if (selectedSampler.contains("lcm")) {
-                        stepsEditor.setText("4");
-                        cfgscaleEditor.setText("1");
-                    }
+            } else if (parent.getId() == R.id.sampler_spinner) {
+                selectedSampler = samplerList.get(position);
+                if (selectedSampler.contains("lcm")) {
+                    stepsEditor.setText("4");
+                    cfgscaleEditor.setText("1");
                 }
-                if (parent.getId() == R.id.scheduler_spinner)
-                    selectedScheduler = schedulerList.get(position);
+            } else if (parent.getId() == R.id.scheduler_spinner) {
+                selectedScheduler = schedulerList.get(position);
+            } else if (parent.getId() == R.id.ext_spinner) {
+                selectedExt = ext_spinner.getSelectedItem().toString();
+            }
+            String key = spinnersMap.get(parent.getId());
+            if (key != null) {
+                vm.setPrefString(key, parent.getSelectedItem().toString());  // cannot be null when selected
             }
         }
 
         @Override
         public void onNothingSelected(AdapterView<?> parent) {
         }
+    }
+
+    final private static Map<Integer, String> spinnersMap = new HashMap<>();
+
+    static {
+        spinnersMap.put(R.id.model_spinner, SDViewModel.prefsKeyModel);
+        spinnersMap.put(R.id.sampler_spinner, SDViewModel.prefsKeySampler);
+        spinnersMap.put(R.id.scheduler_spinner, SDViewModel.prefsKeyScheduler);
+        spinnersMap.put(R.id.ext_spinner, SDViewModel.prefsKeyExt);
+    }
+
+    private void setupSpinner(Spinner spinner) {
+        String key = spinnersMap.get(spinner.getId());
+        if (key == null) {
+            // id-key pair must be defined in spinnersMap
+            Toast.makeText(myActivity, "No key for " + getResources().getResourceEntryName(spinner.getId()), Toast.LENGTH_LONG).show();
+            return;
+        }
+        Object item = spinner.getSelectedItem();
+        String to = item == null ? "" : item.toString();
+        String tn = vm.getPrefString(key, to);
+        if (!tn.equals(to)) {
+            //noinspection unchecked
+            spinner.setSelection(Math.max(0, ((ArrayAdapter<String>) spinner.getAdapter()).getPosition(tn)));
+        }
+        spinner.setOnItemSelectedListener(new ItemSelectedListener());
     }
 
     final private static Map<Integer, String> checkboxesMap = new HashMap<>();

@@ -437,7 +437,28 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="6dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/images_format"
+                                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                            <Spinner
+                                android:id="@+id/ext_spinner"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="15dp"
+                                android:entries="@array/image_extension_entries"
+                                android:background="@color/system_accent1_50"
+                                android:padding="5dp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginVertical="5dp"
                             android:orientation="vertical">
 
                             <TextView
