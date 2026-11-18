@@ -518,7 +518,7 @@ public class SDActivity extends AppCompatActivity {
             // we can use arguments.add() even if overwriting an earlier argument, no problem for sd.cpp,
             // and we can overwrite earlier arguments by using optionsEditor's contents (at the end of list)
             libPath = nativeLibDir.toString();      // get openCL libs
-            String tempFolderPath;
+            String tempFolderPath = "";
             if (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ||
                     selectedModelfile.toUpperCase().contains("DIFF-INSTRUCTSTAR")) {
                 arguments.add("--timestep-shift");
@@ -532,40 +532,16 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--diffusion-conv-direct");
                 arguments.add("--vae-conv-direct");
             }
+            if (selectedModelfile.toUpperCase().contains("MINIT2I") || selectedModelfile.toUpperCase().contains("ZIMAGE")) {
+                arguments.set(1, "--diffusion-model"); // replace "-m"
+                // Currently other needed options like "--t5xxl" or "--llm" or "--vae" must be entered via "additional options"
+            }
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
-                tempFolderPath = "";
-                // for some budget devices with low RAM and NO usable openCL drivers:
-                if (selectedModelfile.toUpperCase().contains("SSD")) {
-                    arguments.add("--type");
-                    arguments.add("q8_0");
-                } else {
-                    if (selectedModelfile.toUpperCase().contains("XL")) {
-                        if (!selectedModelfile.toUpperCase().contains("GGUF")) {
-                            arguments.add("--type");
-                            arguments.add("q8_0"); //"q4_0";
-                        } // else keep as GGUF is
-                    } else {
-                        if (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ||
-                                selectedModelfile.toUpperCase().contains("DIFF-INSTRUCTSTAR")) {
-                            arguments.add("--type");
-                            arguments.add("q4_0");
-                        }
-                    }
-                }
             } else {
                 sdFileName = SDlibopenCL;
                 tempFolderPath = getApplicationContext().getCacheDir().getAbsolutePath();
                 libPath += ":" + libVendorPath;
-                // this settings seem to work quite well at openCL/ADRENO 810
-                arguments.add("--type");
-                arguments.add(selectedModelfile.toUpperCase().contains("SDXS") ? "f16" : "q4_0");
-                // "f16" is optimal for huge VRAM or very small models like SDXS
-                if (selectedModelfile.toUpperCase().contains("MINIT2I") || selectedModelfile.toUpperCase().contains("ZIMAGE")) {
-                    arguments.set(1, "--diffusion-model"); // replace "-m"
-                    // Currently other needed options like "--t5xxl" or "--llm" or "--vae"
-                    // must be entered via "--extra-eptions", see SDUIoptionsLoader.java
-                }
             }
             File file = new File(nativeLibDir, sdFileName);
             if (!(file.exists() && file.length() > 0)) {
@@ -583,7 +559,7 @@ public class SDActivity extends AppCompatActivity {
                     .split(anySpace + "+(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
             for (int i = 0; i < args.length; i++) {
                 if (("-o".equals(args[i]) || "--output".equals(args[i])) && i < args.length - 1) {
-                    i++; // get next arg, remove dangerous chars and select a JPG file
+                    i++; // get next arg, remove dangerous chars
                     args[i] = args[i].replaceAll("[^a-zA-Z0-9._-]", "")
                             + "." + (selectedExt == null ? "jpg" : selectedExt);
                     localOutputImagePath = sdWorkPath + "/" + args[i];

@@ -551,7 +551,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="15dp"
                     android:layout_marginTop="5dp"
-                    android:layout_marginBottom="30dp"
+                    android:layout_marginBottom="160dp"
                     android:backgroundTint="@color/teal_200"
                     android:text="@string/param_template" />
             </LinearLayout>

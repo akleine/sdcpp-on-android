@@ -27,6 +27,8 @@ public class SDUIoptionsLoader implements View.OnClickListener {
     private SDActivity sda;
     private File currentDirectory;
     private AlertDialog currentDialog;
+    private String usedfileextensions;
+
     final private static Map<String, Integer> optionsUIIdMap = new HashMap<>();
 
     static {
@@ -65,6 +67,8 @@ public class SDUIoptionsLoader implements View.OnClickListener {
     @Override
     public void onClick(View view) {
         sda = (SDActivity) view.getContext();
+        final String[] extensionsArr = sda.getResources().getStringArray(R.array.image_extension_entries);
+        usedfileextensions = String.join("|", extensionsArr);
         recursiveFolderBrowser(new File(sda.sdWorkPath));
     }
 
@@ -117,7 +121,8 @@ public class SDUIoptionsLoader implements View.OnClickListener {
             if (file.isDirectory()) {
                 return true;
             }
-            return (file.length() < MAXSCRIPTFILESIZE && file.getName().matches("(?i)^.*\\.jpg\\.sh$"));
+            return (file.length() < MAXSCRIPTFILESIZE &&
+                    file.getName().matches("(?i)^.*\\.(" + usedfileextensions + ")\\.sh$"));
         };
         File[] items = directory.listFiles(navigationFilter);
         if (items == null) items = new File[0];

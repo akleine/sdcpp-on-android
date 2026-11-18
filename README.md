@@ -21,8 +21,8 @@ Download these safetensors or ckpt files using your favorite web browser and sto
 * Grant permissions: Confirm the required storage permissions (see Security & Privacy Note below).
 
 * Generate an image in three steps
-The generated image files (JPG) are saved in 'Download' folder, called outputXXXXXXXXXX.jpg, where XXXXXXXXXX is the Unix timestamp of when the generation started. Also a log file is written, called outputXXXXXXXXXX.jpg.log.txt.
-Additionally a script file (outputXXXXXXXXXX.jpg.sh) is written, useful for subsequent repetitions of the process.
+The generated image files (ext is one of JPG, PNG or WEBP) are saved in 'Download' folder, called outputXXXXXXXXXX.ext , where XXXXXXXXXX is the Unix timestamp of when the generation started. Also a log file is written, called outputXXXXXXXXXX.ext.log.txt.
+Additionally a script file (outputXXXXXXXXXX.ext.sh) is written, useful for subsequent repetitions of the process.
     
 ### Example: Generate an SDXS image (within seconds)
 
@@ -62,7 +62,7 @@ Additionally a script file (outputXXXXXXXXXX.jpg.sh) is written, useful for subs
 
 Import the project to Android Studio and build it, then execute the built APK on your device by sideloading it via ADB. You also are free to build the native library part by yourself, see below.
 
-## License: 
+## License:
 
 MIT, the same license as sd.cpp.
 
