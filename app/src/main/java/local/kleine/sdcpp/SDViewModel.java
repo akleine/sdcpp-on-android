@@ -34,6 +34,7 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeySampler   = "prefs_sampler";
     public static final String prefsKeyScheduler = "prefs_scheduler";
     public static final String prefsKeyExt       = "prefs_ext";
+    public static final String prefsKeyQuant       = "prefs_quant";
     /*
     ** caches previous values, since SharedPreferences.Editor
     ** does not have methods to get temporary values from its memory
