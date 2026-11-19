@@ -68,7 +68,8 @@ public class SDActivity extends AppCompatActivity {
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
     private final Activity myActivity;
-    @NonNull private String selectedModelfile = "";
+    @NonNull
+    private String selectedModelfile = "";
     private String selectedSampler, selectedScheduler, taesdModel, taesdXLModel;
     private String sdProgramPath, helperPath, libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
     private final static String libVendorPath = "/vendor/lib64";  // no support possible for 32 bit with openCL
@@ -76,9 +77,11 @@ public class SDActivity extends AppCompatActivity {
     private final static String SDlibopenCL = "libsdopenCL.so";
     private final static String SDlib = "libsd.so";
     private final static String defExt = ".jpg";
-    @NonNull private String selectedExt = defExt;
+    @NonNull
+    private String selectedExt = defExt;
     private final static String DEFAULT_QUANTIZER = "default";  // see @array/quant_entries
-    @NonNull private String selectedQuant = DEFAULT_QUANTIZER;
+    @NonNull
+    private String selectedQuant = DEFAULT_QUANTIZER;
     private File nativeLibDir;
     protected final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
@@ -88,7 +91,7 @@ public class SDActivity extends AppCompatActivity {
             "\\s";
 
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
-            widthEditor, heightEditor, cfgscaleEditor, optionsEditor;
+            widthEditor, heightEditor, cfgscaleEditor, optionsEditor, t5xxlEditor;
     private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker, vaetilingchecker, convdirectchecker;
     private View wrapperView;
     private ListView sdLogView;
@@ -316,6 +319,8 @@ public class SDActivity extends AppCompatActivity {
         setupEditText(negativeEditor);
         optionsEditor = findViewById(R.id.stringopt);
         setupEditText(optionsEditor);
+        t5xxlEditor = findViewById(R.id.stringt5xxl);
+        setupEditText(t5xxlEditor);
         stepsEditor = findViewById(R.id.stringsteps);
         setupEditText(stepsEditor);
         seedEditor = findViewById(R.id.stringseed);
@@ -492,6 +497,11 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--diffusion-conv-direct");
                 arguments.add("--vae-conv-direct");
             }
+
+            String t5 = t5xxlEditor.getText().toString();
+            arguments.add("--t5xxl");
+            arguments.add(t5.isEmpty() ? "\"\"" : t5);
+
             if (!selectedQuant.equals(DEFAULT_QUANTIZER)) {
                 arguments.add("--type");
                 arguments.add(selectedQuant);
@@ -978,9 +988,9 @@ public class SDActivity extends AppCompatActivity {
                     taesdXLchecker.setChecked(false);  // off state doesn't affect others
                     taesdchecker.setChecked(false);
                 } else if (isSTAR || isNITRO
-                            || model.contains("XL")
-                            || model.contains("SSD")
-                            || model.contains("VEGA")) {
+                        || model.contains("XL")
+                        || model.contains("SSD")
+                        || model.contains("VEGA")) {
                     if (!taesdXLModel.isEmpty()) {
                         taesdXLchecker.setChecked(true);
                     }
@@ -1128,6 +1138,7 @@ public class SDActivity extends AppCompatActivity {
         editsMap.put(R.id.stringprompt, SDViewModel.prefsKeyPrompt);
         editsMap.put(R.id.stringnegprompt, SDViewModel.prefsKeyNegPrompt);
         editsMap.put(R.id.stringopt, SDViewModel.prefsKeyOptions);
+        editsMap.put(R.id.stringt5xxl, SDViewModel.prefst5xxlOptions);
         editsMap.put(R.id.stringsteps, SDViewModel.prefsKeySteps);
         editsMap.put(R.id.stringseed, SDViewModel.prefsKeySeed);
         editsMap.put(R.id.stringwidth, SDViewModel.prefsKeyWidth);
@@ -1147,6 +1158,7 @@ public class SDActivity extends AppCompatActivity {
         vm.savePreferences();
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setupEditText(EditText editText) {
         String key = editsMap.get(editText.getId());
         if (key == null) {
@@ -1156,9 +1168,16 @@ public class SDActivity extends AppCompatActivity {
         }
         String to = editText.getText().toString();
         String tn = vm.getPrefString(key, to);
-        if (!tn.equals(to))
+        if (!tn.equals(to)) {
             editText.setText(tn);
+        }
         editText.setOnFocusChangeListener(editFocusListener);
+        if (editText == promptEditor || editText == negativeEditor || editText == optionsEditor) {
+            editText.setOnTouchListener(editTouchListenerResetText);
+        }
+        if (editText == t5xxlEditor) {
+            editText.setOnTouchListener(editTouchListenerGetFileName);
+        }
     }
 
     final private View.OnFocusChangeListener editFocusListener = (v, hasFocus) -> {
@@ -1167,5 +1186,51 @@ public class SDActivity extends AppCompatActivity {
             if (key != null)  // known EditText
                 vm.setPrefString(key, ((EditText) v).getText().toString());
         }
+    };
+
+    final private View.OnTouchListener editTouchListenerResetText = (v, event) -> {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            v.performClick();
+            if (((EditText) v).getCompoundDrawables()[2] != null) {
+                int iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
+                if (event.getRawX() >= (v.getRight() - iconWidth - (v).getPaddingEnd())) {
+                    ((EditText) v).setText("");
+                    v.performClick();
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    public static class action implements FileSelector.actionForFileSelector {
+        EditText editText;
+
+        public void actOn(File selectedItem) {
+            if (selectedItem != null) {
+                editText.setText(selectedItem.getAbsolutePath());
+            }
+        }
+
+        public action(EditText editText) {
+            this.editText = editText;
+        }
+    }
+
+    final private View.OnTouchListener editTouchListenerGetFileName = (v, event) -> {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            v.performClick();
+            if (((EditText) v).getCompoundDrawables()[2] != null) {
+                int iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
+                if (event.getRawX() >= (v.getRight() - iconWidth - (v).getPaddingEnd())) {
+                    FileSelector.actionForFileSelector actionToBeExecuted = new action((EditText) v);
+                    FileSelector fsel = new FileSelector(this, -1, ".safetensors|.gguf", "");
+                    fsel.recursiveFolderBrowser(new File(sdWorkPath), actionToBeExecuted);
+                    v.performClick();
+                    return true;
+                }
+            }
+        }
+        return false;
     };
 }

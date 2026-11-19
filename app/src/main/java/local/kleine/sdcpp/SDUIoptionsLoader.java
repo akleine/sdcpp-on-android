@@ -6,15 +6,13 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Spinner;
 
-import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.NonNull;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +23,9 @@ import java.util.stream.Collectors;
 public class SDUIoptionsLoader implements View.OnClickListener {
     final private static int MAXSCRIPTFILESIZE = 2048;
     private SDActivity sda;
-    private File currentDirectory;
-    private AlertDialog currentDialog;
     private String usedfileextensions;
+
+    private final String logFileExt = "\\.sh$";
 
     final private static Map<String, Integer> optionsUIIdMap = new HashMap<>();
 
@@ -43,6 +41,7 @@ public class SDUIoptionsLoader implements View.OnClickListener {
         optionsUIIdMap.put("--height", R.id.stringheight);
         optionsUIIdMap.put("--sampling-method", R.id.sampler_spinner);
         optionsUIIdMap.put("--scheduler", R.id.scheduler_spinner);
+        optionsUIIdMap.put("--t5xxl", R.id.stringt5xxl);
         //-- pseudo options for setting UI elements --
         optionsUIIdMap.put("--use-taesd", R.id.taesdchecker);
         optionsUIIdMap.put("--no-taesd", R.id.taesdchecker); // "--no-" == inversed
@@ -65,13 +64,16 @@ public class SDUIoptionsLoader implements View.OnClickListener {
     }
 
     @Override
-    public void onClick(View view) {
+    public void onClick(@NonNull View view) {
+        FileSelector.actionForFileSelector actionToBeExecuted = new action();
         sda = (SDActivity) view.getContext();
         final String[] extensionsArr = sda.getResources().getStringArray(R.array.image_extension_entries);
         usedfileextensions = String.join("|", extensionsArr);
-        recursiveFolderBrowser(new File(sda.sdWorkPath));
+        FileSelector fsel = new FileSelector(sda, MAXSCRIPTFILESIZE, usedfileextensions, logFileExt);
+        fsel.recursiveFolderBrowser(new File(sda.sdWorkPath), actionToBeExecuted);
     }
 
+    @NonNull
     private List<String> tokenize(String input) {
         List<String> tokens = new ArrayList<>();
         Matcher m = Pattern.compile("\"([^\"]*)\"|([^\\s\\\\]+)").matcher(input);
@@ -113,66 +115,15 @@ public class SDUIoptionsLoader implements View.OnClickListener {
         }
     }
 
-    private void recursiveFolderBrowser(File directory) {
-        if (!directory.exists() || !directory.isDirectory()) {
-            return;
-        }
-        FileFilter navigationFilter = file -> {
-            if (file.isDirectory()) {
-                return true;
+    public class action implements FileSelector.actionForFileSelector {
+        public void actOn(File selectedItem) {
+            try {
+                BufferedReader reader = new BufferedReader(new FileReader(selectedItem));
+                String cmdline = reader.lines().collect(Collectors.joining());
+                parseShellScript(cmdline);
+                reader.close();
+            } catch (IOException ignored) {
             }
-            return (file.length() < MAXSCRIPTFILESIZE &&
-                    file.getName().matches("(?i)^.*\\.(" + usedfileextensions + ")\\.sh$"));
-        };
-        File[] items = directory.listFiles(navigationFilter);
-        if (items == null) items = new File[0];
-        Arrays.sort(items, (f1, f2) -> {
-            if (f1.isDirectory() && !f2.isDirectory()) return -1;
-            if (!f1.isDirectory() && f2.isDirectory()) return 1;
-            return f1.getName().compareToIgnoreCase(f2.getName());
-        });
-        List<String> displayNames = new ArrayList<>();
-        List<File> fileObjects = new ArrayList<>();
-        if (!directory.getAbsolutePath().equals(sda.sdWorkPath)) {
-            displayNames.add("📁 .. ");
-            fileObjects.add(directory.getParentFile());
         }
-        for (File item : items) {
-            if (item.isDirectory()) {
-                displayNames.add("📁 " + item.getName() + "/");
-            } else {
-                displayNames.add("📄 " + item.getName());
-            }
-            fileObjects.add(item);
-        }
-        CharSequence[] itemsArray = displayNames.toArray(new CharSequence[0]);
-        if (currentDialog != null && currentDialog.isShowing()) {
-            currentDialog.dismiss();
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(sda);
-        builder.setTitle(directory.getName());
-        builder.setItems(itemsArray, (dialog, which) -> {
-            File selectedItem = fileObjects.get(which);
-            if (!directory.getAbsolutePath().equals(sda.sdWorkPath) && which == 0) {
-                currentDirectory = selectedItem;
-                recursiveFolderBrowser(currentDirectory);
-                return;
-            }
-            if (selectedItem.isDirectory()) {
-                currentDirectory = selectedItem;
-                recursiveFolderBrowser(currentDirectory);
-            } else {
-                try {
-                    BufferedReader reader = new BufferedReader(new FileReader(selectedItem));
-                    String cmdline = reader.lines().collect(Collectors.joining());
-                    parseShellScript(cmdline);
-                    reader.close();
-                } catch (IOException ignored) {
-                }
-            }
-        });
-        builder.setNegativeButton(R.string.close_dialog, (dialog, which) -> currentDirectory = new File(sda.sdWorkPath));
-        currentDialog = builder.create();
-        currentDialog.show();
     }
 }

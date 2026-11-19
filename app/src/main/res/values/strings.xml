@@ -39,4 +39,5 @@
     <string name="close_dialog">close</string>
     <string name="images_format">images format:</string>
     <string name="quantizer">quantizer:</string>
+    <string name="t5xxl">t5xxl file:</string>
 </resources>

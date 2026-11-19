@@ -15,6 +15,7 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeyPrompt    = "prefs_prompt";
     public static final String prefsKeyNegPrompt = "prefs_neg_prompt";
     public static final String prefsKeyOptions   = "prefs_options";
+    public static final String prefst5xxlOptions   = "prefs_t5xxl";
     public static final String prefsKeySteps     = "prefs_steps";
     public static final String prefsKeySeed      = "prefs_seed";
     public static final String prefsKeyWidth     = "prefs_width";

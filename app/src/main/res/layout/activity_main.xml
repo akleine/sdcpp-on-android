@@ -39,6 +39,7 @@
                     android:labelFor="@id/stringpromptmsg"
                     android:singleLine="false"
                     android:text="@string/default_prompt"
+                    android:drawableEnd="@android:drawable/ic_menu_close_clear_cancel"
                     tools:ignore="Autofill,TouchTargetSizeCheck" />
             </LinearLayout>
 
@@ -64,6 +65,7 @@
                     android:labelFor="@id/stringnegpromptmsg"
                     android:singleLine="false"
                     android:text="@string/default_negative"
+                    android:drawableEnd="@android:drawable/ic_menu_close_clear_cancel"
                     tools:ignore="autofill,TouchTargetSizeCheck" />
             </LinearLayout>
 
@@ -501,11 +503,32 @@
                                 android:id="@+id/stringopt"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="textMultiLine"
+                                android:inputType="text"
+                                android:labelFor="@id/stringpromptmsg"
+                                android:singleLine="true"
+                                android:text="--fa"
+                                android:drawableEnd="@android:drawable/ic_menu_close_clear_cancel"
+                                tools:ignore="Autofill,TouchTargetSizeCheck" />
+
+                            <TextView
+                                android:id="@+id/stringt5xxlmsg"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/t5xxl"
+                                android:labelFor="@id/stringt5xxl"
+                                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                            <EditText
+                                android:id="@+id/stringt5xxl"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text"
                                 android:labelFor="@id/stringpromptmsg"
                                 android:singleLine="false"
-                                android:text="@string/options"
+                                android:text=""
+                                android:drawableEnd="@android:drawable/ic_menu_manage"
                                 tools:ignore="Autofill,TouchTargetSizeCheck" />
+
                         </LinearLayout>
 
                         <LinearLayout
