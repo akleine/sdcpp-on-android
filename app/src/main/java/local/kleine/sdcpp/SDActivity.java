@@ -68,12 +68,17 @@ public class SDActivity extends AppCompatActivity {
     private ArrayList<String> logList = null;
     private static sdIOThread sd_thread = null;
     private final Activity myActivity;
-    private String selectedModelfile, selectedSampler, selectedScheduler, selectedExt, taesdModel, taesdXLModel;
+    @NonNull private String selectedModelfile = "";
+    private String selectedSampler, selectedScheduler, taesdModel, taesdXLModel;
     private String sdProgramPath, helperPath, libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
     private final static String libVendorPath = "/vendor/lib64";  // no support possible for 32 bit with openCL
     private final static String ChklibopenCL = "libchkopenCL.so";
     private final static String SDlibopenCL = "libsdopenCL.so";
     private final static String SDlib = "libsd.so";
+    private final static String defExt = ".jpg";
+    @NonNull private String selectedExt = defExt;
+    private final static String DEFAULT_QUANTIZER = "default";  // see @array/quant_entries
+    @NonNull private String selectedQuant = DEFAULT_QUANTIZER;
     private File nativeLibDir;
     protected final String sdWorkPath = android.os.Environment.
             getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).
@@ -93,55 +98,17 @@ public class SDActivity extends AppCompatActivity {
     private Spinner scheduler_spinner;
     private Spinner model_spinner;
     private Spinner ext_spinner;
+    private Spinner quant_spinner;
     private ImageView imageOutputView;
     private ArrayAdapter<String> arrayAdapter;
-    private static final String[] samplerArr = {
-            "euler",
-            "euler_a",
-            "heun",
-            "dpm2",
-            "dpm++2s_a",
-            "dpm++2m",
-            "dpm++2mv2",
-            "ipndm",
-            "ipndm_v",
-            "lcm" /* LCM_POS 9 */,
-            "ddim_trailing",
-            "tcd",
-            "res_multistep",
-            "res_2s",
-            "er_sde",
-            "euler_cfg_pp",
-            "euler_a_cfg_pp",
-            "euler_ge",
-            "dpm++2m_sde",
-            "dpm++2m_sde_bt",
-            "lms",
-    };
-    private static final int LCM_POS = 9;
 
-    private static final String[] schedulerArr = {
-            "discrete",
-            "karras",
-            "exponential",
-            "ays",
-            "gits",
-            "sgm_uniform", /* Pos 5 */
-            "simple",
-            "smoothstep",
-            "kl_optimal",
-            "lcm",
-            "bong_tangent",
-            "ltx2",
-            "logit_normal",
-            "flux2",
-            "flux",
-            "beta",
-            "llada_image",
-    };
-    private static final int POS_DISCRETE = 0;
-    private static final int POS_SGM_UNI = 5;
-    private List<String> fileList, samplerList, schedulerList;
+    // see @array/sampler_entries
+    private static final String SAMPLER_LCM = "lcm";
+    // see @array/scheduler_entries
+    private static final String SCHEDULER_DISCRETE = "discrete";
+    private static final String SCHEDULER_SGM_UNIFORM = "sgm_uniform";
+
+    private List<String> fileList;
 
 
     public SDActivity() {
@@ -372,23 +339,15 @@ public class SDActivity extends AppCompatActivity {
         ArrayAdapter<String> model_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, fileList);
         model_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         model_spinner.setAdapter(model_adapter);
-
+        setupSpinner(model_spinner);
         sampler_spinner = findViewById(R.id.sampler_spinner);
-        sampler_spinner.setOnItemSelectedListener(new ItemSelectedListener());
-        samplerList = Arrays.asList(samplerArr);
-        ArrayAdapter<String> sampler_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, samplerList);
-        sampler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        sampler_spinner.setAdapter(sampler_adapter);
-
+        setupSpinner(sampler_spinner);
         scheduler_spinner = findViewById(R.id.scheduler_spinner);
-        scheduler_spinner.setOnItemSelectedListener(new ItemSelectedListener());
-        schedulerList = Arrays.asList(schedulerArr);
-        ArrayAdapter<String> scheduler_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, schedulerList);
-        scheduler_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        scheduler_spinner.setAdapter(scheduler_adapter);
-
+        setupSpinner(scheduler_spinner);
         ext_spinner = findViewById(R.id.ext_spinner);
         setupSpinner(ext_spinner);
+        quant_spinner = findViewById(R.id.quant_spinner);
+        setupSpinner(quant_spinner);
 
         // animator setup
         LinearLayout animatedLayout = findViewById(R.id.details_animation);
@@ -447,7 +406,7 @@ public class SDActivity extends AppCompatActivity {
         setupCheckBox(taesdchecker, true, taesdCheckListener);  // suggest by default
         if (taesdModel.isEmpty()) {
             // override user choice if Taesd is not available anymore
-            taesdchecker.setChecked(false);
+            taesdchecker.setChecked(false);  // off state does not affect anything
             taesdchecker.setEnabled(false);
         } else {
             TextView taesdview = findViewById(R.id.taesdmodel);
@@ -456,7 +415,7 @@ public class SDActivity extends AppCompatActivity {
         setupCheckBox(taesdXLchecker, true, taesdCheckListener);  // suggest by default
         if (taesdXLModel.isEmpty()) {
             // override user choice if TaesdXL is not available anymore
-            taesdXLchecker.setChecked(false);
+            taesdXLchecker.setChecked(false);  // off state does not affect anything
             taesdXLchecker.setEnabled(false);
         } else {
             TextView taesdXLview = findViewById(R.id.taesdXLmodel);
@@ -464,12 +423,13 @@ public class SDActivity extends AppCompatActivity {
         }
         setupCheckBox(embeddchecker, false, onCheckedChangeListener);  // disable embeddings by default
         if (helperPath.isEmpty()) {
-            taesdXLchecker.setChecked(false);
-            taesdXLchecker.setEnabled(false);
+            embeddchecker.setChecked(false);  // off state does not affect anything
+            embeddchecker.setEnabled(false);
         }
         setupCheckBox(gpuchecker, true, new GpuCheckListener());  // enable GPU by default
         if (!canUseOpenCL) {
-            gpuchecker.setChecked(false);
+            if (gpuchecker.isChecked())        // off state affects quantizaton, therefore
+                gpuchecker.setChecked(false);  // skipping unneccessary switching
             gpuchecker.setEnabled(false);
         }
         setupCheckBox(vaetilingchecker, true, onCheckedChangeListener);  // enable by default to reduce memory
@@ -487,8 +447,7 @@ public class SDActivity extends AppCompatActivity {
                 prompt = "something";
             }
             String negative = negativeEditor.getText().toString();
-            String localOutputImagePath = sdWorkPath + "/output" + (System.currentTimeMillis() / 1000L)
-                    + "." + (selectedExt == null ? "jpg" : selectedExt);
+            String localOutputImagePath = sdWorkPath + "/output" + (System.currentTimeMillis() / 1000L) + selectedExt;
             String taesdoption = "";
             if (taesdchecker.isChecked()) {
                 taesdoption = taesdModel;
@@ -519,10 +478,11 @@ public class SDActivity extends AppCompatActivity {
             // and we can overwrite earlier arguments by using optionsEditor's contents (at the end of list)
             libPath = nativeLibDir.toString();      // get openCL libs
             String tempFolderPath = "";
-            if (selectedModelfile.toUpperCase().contains("NITROSD-REAL") ||
-                    selectedModelfile.toUpperCase().contains("DIFF-INSTRUCTSTAR")) {
+            String model = selectedModelfile.toUpperCase();
+            if (model.contains("NITROSD-REAL") ||
+                    model.contains("DIFF-INSTRUCTSTAR")) {
                 arguments.add("--timestep-shift");
-                arguments.add(selectedModelfile.toUpperCase().contains("NITRO") ? "250" : "400");
+                arguments.add(model.contains("NITRO") ? "250" : "400");
                 arguments.add("--auto-fit");
                 arguments.add("off");
             }
@@ -532,7 +492,11 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--diffusion-conv-direct");
                 arguments.add("--vae-conv-direct");
             }
-            if (selectedModelfile.toUpperCase().contains("MINIT2I") || selectedModelfile.toUpperCase().contains("ZIMAGE")) {
+            if (!selectedQuant.equals(DEFAULT_QUANTIZER)) {
+                arguments.add("--type");
+                arguments.add(selectedQuant);
+            }
+            if (model.contains("MINIT2I") || model.contains("ZIMAGE")) {
                 arguments.set(1, "--diffusion-model"); // replace "-m"
                 // Currently other needed options like "--t5xxl" or "--llm" or "--vae" must be entered via "additional options"
             }
@@ -559,9 +523,8 @@ public class SDActivity extends AppCompatActivity {
                     .split(anySpace + "+(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
             for (int i = 0; i < args.length; i++) {
                 if (("-o".equals(args[i]) || "--output".equals(args[i])) && i < args.length - 1) {
-                    i++; // get next arg, remove dangerous chars
-                    args[i] = args[i].replaceAll("[^a-zA-Z0-9._-]", "")
-                            + "." + (selectedExt == null ? "jpg" : selectedExt);
+                    i++; // get next arg and remove dangerous chars
+                    args[i] = args[i].replaceAll("[^a-zA-Z0-9._-]", "") + selectedExt;
                     localOutputImagePath = sdWorkPath + "/" + args[i];
                 }
             }
@@ -583,7 +546,7 @@ public class SDActivity extends AppCompatActivity {
                             .replace("\\", "\\\\")
                             .replace("\"", "\\\"")
                             + "\"";  // negative prompt
-                    args[8] = "output." + (selectedExt == null ? "jpg" : selectedExt);
+                    args[8] = "output" + selectedExt;
                     args[10] = "\"" + args[10] + "\"";
                     args[12] = "\"" + args[12] + "\"";
                     args[16] = "\"" + args[16] + "\"";
@@ -988,7 +951,7 @@ public class SDActivity extends AppCompatActivity {
                 if (editable.toString().contains("<lora:")) {
                     // here some lazy checks:
                     if (editable.toString().toUpperCase().contains("LCM") || editable.toString().toUpperCase().contains("VEGA")) {
-                        sampler_spinner.setSelection(LCM_POS);
+                        selectSpinnerString(sampler_spinner, SAMPLER_LCM);
                     }
                 }
             }
@@ -996,56 +959,48 @@ public class SDActivity extends AppCompatActivity {
     }
 
     public class ItemSelectedListener implements AdapterView.OnItemSelectedListener {
-        @SuppressLint("SetTextI18n")
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             if (parent.getId() == R.id.model_spinner) {
                 selectedModelfile = fileList.get(position);
                 // here follow some lazy checks for easy defaults - just for the moment
-                if (selectedModelfile.toUpperCase().contains("SDXS")
-                        || selectedModelfile.toUpperCase().contains("STAR")
-                        || selectedModelfile.toUpperCase().contains("NITRO")) {
+                String model = selectedModelfile.toUpperCase();
+                boolean isSDXS = model.contains("SDXS");
+                boolean isSTAR = model.contains("STAR");
+                boolean isNITRO = model.contains("NITRO");
+                if (isSDXS || isSTAR || isNITRO) {
                     stepsEditor.setText("1");
                     cfgscaleEditor.setText("1");
-                    scheduler_spinner.setSelection(selectedModelfile.toUpperCase().contains("SDXS") ? POS_DISCRETE : POS_SGM_UNI);
+                    selectSpinnerString(scheduler_spinner,
+                            isSDXS ? SCHEDULER_DISCRETE : SCHEDULER_SGM_UNIFORM);
                 }
-                if (selectedModelfile.toUpperCase().contains("SDXS")) {
-                    taesdXLchecker.setChecked(false);
+                if (isSDXS) {
+                    taesdXLchecker.setChecked(false);  // off state doesn't affect others
                     taesdchecker.setChecked(false);
-                } else {
-                    if (selectedModelfile.toUpperCase().contains("SSD")
-                            || selectedModelfile.toUpperCase().contains("VEGA")
-                            || selectedModelfile.toUpperCase().contains("STAR")
-                            || selectedModelfile.toUpperCase().contains("NITRO")
-                            || selectedModelfile.toUpperCase().contains("XL")) {
-                        if (!taesdXLModel.isEmpty()) {
-                            taesdXLchecker.setChecked(true);
-                        }
+                } else if (isSTAR || isNITRO
+                            || model.contains("XL")
+                            || model.contains("SSD")
+                            || model.contains("VEGA")) {
+                    if (!taesdXLModel.isEmpty()) {
+                        taesdXLchecker.setChecked(true);
                     }
-                    // if selected model doesn't have Taesd recommendations,
-                    // keep user current choice
-                    /*
-                    else {
-                        if (!taesdModel.isEmpty()) {
-                            taesdchecker.setChecked(true);
-                        }
-                    }
-                    //*/
                 }
             } else if (parent.getId() == R.id.sampler_spinner) {
-                selectedSampler = samplerList.get(position);
+                selectedSampler = sampler_spinner.getSelectedItem().toString();
                 if (selectedSampler.contains("lcm")) {
                     stepsEditor.setText("4");
                     cfgscaleEditor.setText("1");
                 }
             } else if (parent.getId() == R.id.scheduler_spinner) {
-                selectedScheduler = schedulerList.get(position);
+                selectedScheduler = scheduler_spinner.getSelectedItem().toString();
             } else if (parent.getId() == R.id.ext_spinner) {
                 selectedExt = ext_spinner.getSelectedItem().toString();
+            } else if (parent.getId() == R.id.quant_spinner) {
+                selectedQuant = quant_spinner.getSelectedItem().toString();
             }
             String key = spinnersMap.get(parent.getId());
             if (key != null) {
-                vm.setPrefString(key, parent.getSelectedItem().toString());  // cannot be null when selected
+                vm.setPrefString(key, parent.getSelectedItem().toString());  // spinner item cannot be null when selected
             }
         }
 
@@ -1054,6 +1009,8 @@ public class SDActivity extends AppCompatActivity {
         }
     }
 
+    final private ItemSelectedListener spinnerListener = new ItemSelectedListener();
+
     final private static Map<Integer, String> spinnersMap = new HashMap<>();
 
     static {
@@ -1061,9 +1018,17 @@ public class SDActivity extends AppCompatActivity {
         spinnersMap.put(R.id.sampler_spinner, SDViewModel.prefsKeySampler);
         spinnersMap.put(R.id.scheduler_spinner, SDViewModel.prefsKeyScheduler);
         spinnersMap.put(R.id.ext_spinner, SDViewModel.prefsKeyExt);
+        spinnersMap.put(R.id.quant_spinner, SDViewModel.prefsKeyQuant);
     }
 
-    private void setupSpinner(Spinner spinner) {
+    private static void selectSpinnerString(@NonNull Spinner spinner, @NonNull String val) {
+        // selects position 0 when string is absent
+        // cast to ArrayAdapter<String> is safe for SpinnerAdapter with strings
+        //noinspection unchecked
+        spinner.setSelection(Math.max(0, ((ArrayAdapter<String>) spinner.getAdapter()).getPosition(val)));
+    }
+
+    private void setupSpinner(@NonNull Spinner spinner) {
         String key = spinnersMap.get(spinner.getId());
         if (key == null) {
             // id-key pair must be defined in spinnersMap
@@ -1073,11 +1038,9 @@ public class SDActivity extends AppCompatActivity {
         Object item = spinner.getSelectedItem();
         String to = item == null ? "" : item.toString();
         String tn = vm.getPrefString(key, to);
-        if (!tn.equals(to)) {
-            //noinspection unchecked
-            spinner.setSelection(Math.max(0, ((ArrayAdapter<String>) spinner.getAdapter()).getPosition(tn)));
-        }
-        spinner.setOnItemSelectedListener(new ItemSelectedListener());
+        if (!tn.equals(to))
+            selectSpinnerString(spinner, tn);
+        spinner.setOnItemSelectedListener(spinnerListener);
     }
 
     final private static Map<Integer, String> checkboxesMap = new HashMap<>();
@@ -1120,7 +1083,26 @@ public class SDActivity extends AppCompatActivity {
         public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
             vaetilingchecker.setChecked(!checked);  // currently not for openCL
             convdirectchecker.setChecked(checked);
-            super.onCheckedChanged(compoundButton, checked);
+            String model = selectedModelfile.toUpperCase();
+            if (gpuchecker.isChecked()) {
+                // these settings seem to work quite well at openCL/ADRENO 810
+                // "f16" is optimal for huge VRAM or very small models like SDXS
+                selectSpinnerString(quant_spinner,
+                        model.contains("SDXS") ? "f16" : "q4_0");
+            } else {  // cpu
+                // for some budget devices with low RAM and NO usable openCL drivers:
+                if (model.contains("SSD")) {
+                    selectSpinnerString(quant_spinner, "q8_0");
+                } else if (model.contains("XL")) {
+                    if (!model.contains("GGUF")) {
+                        selectSpinnerString(quant_spinner, "q8_0");
+                    } // else keep as GGUF is
+                } else if (model.contains("NITROSD-REAL") ||
+                        model.contains("DIFF-INSTRUCTSTAR")) {
+                    selectSpinnerString(quant_spinner, "q4_0");
+                }
+            }
+            super.onCheckedChanged(compoundButton, checked);  // save state in preferences
         }
     }
 

@@ -1,8 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
     <string-array name="image_extension_entries">
-        <item>jpg</item>
-        <item>png</item>
-        <item>webp</item>
+        <item>.jpg</item>
+        <item>.png</item>
+        <item>.webp</item>
     </string-array>
+
+    <string-array name="sampler_entries">
+        <item>euler</item>
+        <item>euler_a</item>
+        <item>heun</item>
+        <item>dpm2</item>
+        <item>dpm++2s_a</item>
+        <item>dpm++2m</item>
+        <item>dpm++2mv2</item>
+        <item>ipndm</item>
+        <item>ipndm_v</item>
+        <item>lcm</item> <!-- see SDActivity.SAMPLER_LCM -->
+        <item>ddim_trailing</item>
+        <item>tcd</item>
+        <item>res_multistep</item>
+        <item>res_2s</item>
+        <item>er_sde</item>
+        <item>euler_cfg_pp</item>
+        <item>euler_a_cfg_pp</item>
+        <item>euler_ge</item>
+        <item>dpm++2m_sde</item>
+        <item>dpm++2m_sde_bt</item>
+        <item>lms</item>
+    </string-array>
+
+    <string-array name="scheduler_entries">
+        <item>discrete</item> <!-- see SDActivity.SCHEDULER_DISCRETE -->
+        <item>karras</item>
+        <item>exponential</item>
+        <item>ays</item>
+        <item>gits</item>
+        <item>sgm_uniform</item> <!-- see SDActivity.SCHEDULER_SGM_UNIFORM -->
+        <item>simple</item>
+        <item>smoothstep</item>
+        <item>kl_optimal</item>
+        <item>lcm</item>
+        <item>bong_tangent</item>
+        <item>ltx2</item>
+        <item>logit_normal</item>
+        <item>flux2</item>
+        <item>flux</item>
+        <item>beta</item>
+        <item>llada_image</item>
+    </string-array>
+
+    <string-array tools:ignore="Typos" name="quant_entries">
+        <!-- see ggml-org/ggml @ ggml.c@643 @ ggml_type_traits type_traits[] -->
+        <item>default</item>
+        <item>i8</item>
+        <item>i16</item>
+        <item>i32</item>
+        <item>i64</item>
+        <item>f64</item>
+        <item>f32</item>
+        <item>f16</item>
+        <item>f8_e4m3</item>
+        <item>f8_e5m2</item>
+        <item>q1_0</item>
+        <item>q2_0</item>
+        <item>q4_0</item>
+        <item>q4_1</item>
+        <!-- <item>q4_2</item>  deprecated GGML_TYPE_Q4_2 -->
+        <!-- <item>q4_3</item>  deprecated GGML_TYPE_Q4_3 -->
+        <item>q5_0</item>
+        <item>q5_1</item>
+        <item>q8_0</item>
+        <item>q8_1</item>
+        <item>mxfp4</item>
+        <item>nvfp4</item>
+        <item>q2_K</item>
+        <item>q3_K</item>
+        <item>q4_K</item>
+        <item>q5_K</item>
+        <item>q6_K</item>
+        <item>iq2_xxs</item>
+        <item>iq2_xs</item>
+        <item>iq3_xxs</item>
+        <item>iq3_s</item>
+        <item>iq2_s</item>
+        <item>iq1_s</item>
+        <item>iq1_m</item>
+        <item>iq4_nl</item>
+        <item>iq4_xs</item>
+        <item>q8_K</item>
+        <item>bf16</item>
+        <!-- <item>q4_0_4_4</item>  "TYPE_Q4_0_4_4 REMOVED, use Q4_0 with runtime repacking" -->
+        <!-- <item>q4_0_4_8</item>  "TYPE_Q4_0_4_8 REMOVED, use Q4_0 with runtime repacking" -->
+        <!-- <item>q4_0_8_8</item>  "TYPE_Q4_0_8_8 REMOVED, use Q4_0 with runtime repacking" -->
+        <item>tq1_0</item>
+        <item>tq2_0</item>
+        <!-- <item>iq4_nl_4_4</item>  "TYPE_IQ4_NL_4_4 REMOVED, use IQ4_NL with runtime repacking" -->
+        <!-- <item>iq4_nl_4_8</item>  "TYPE_IQ4_NL_4_8 REMOVED, use IQ4_NL with runtime repacking" -->
+        <!-- <item>iq4_nl_8_8</item>  "TYPE_IQ4_NL_8_8 REMOVED, use IQ4_NL with runtime repacking" -->
+    </string-array>
+
 </resources>
