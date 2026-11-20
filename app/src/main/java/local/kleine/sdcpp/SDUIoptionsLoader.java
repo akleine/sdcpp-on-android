@@ -42,6 +42,8 @@ public class SDUIoptionsLoader implements View.OnClickListener {
         optionsUIIdMap.put("--sampling-method", R.id.sampler_spinner);
         optionsUIIdMap.put("--scheduler", R.id.scheduler_spinner);
         optionsUIIdMap.put("--t5xxl", R.id.stringt5xxl);
+        optionsUIIdMap.put("--vae", R.id.stringvae);
+        optionsUIIdMap.put("--llm", R.id.stringllm);
         //-- pseudo options for setting UI elements --
         optionsUIIdMap.put("--use-taesd", R.id.taesdchecker);
         optionsUIIdMap.put("--no-taesd", R.id.taesdchecker); // "--no-" == inversed

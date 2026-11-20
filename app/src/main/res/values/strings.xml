@@ -40,4 +40,6 @@
     <string name="images_format">images format:</string>
     <string name="quantizer">quantizer:</string>
     <string name="t5xxl">t5xxl file:</string>
+    <string name="vae">vae file:</string>
+    <string name="llm">llm file:</string>
 </resources>

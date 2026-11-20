@@ -91,7 +91,7 @@ public class SDActivity extends AppCompatActivity {
             "\\s";
 
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
-            widthEditor, heightEditor, cfgscaleEditor, optionsEditor, t5xxlEditor;
+            widthEditor, heightEditor, cfgscaleEditor, optionsEditor, t5xxlEditor,  llmEditor, vaeEditor;
     private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker, vaetilingchecker, convdirectchecker;
     private View wrapperView;
     private ListView sdLogView;
@@ -309,7 +309,6 @@ public class SDActivity extends AppCompatActivity {
         }
         setupLogWindow();
 
-
         Button fileSelectButton = findViewById(R.id.fileSelectButton);
         fileSelectButton.setOnClickListener(new SDUIoptionsLoader());
         promptEditor = findViewById(R.id.stringprompt);
@@ -321,6 +320,10 @@ public class SDActivity extends AppCompatActivity {
         setupEditText(optionsEditor);
         t5xxlEditor = findViewById(R.id.stringt5xxl);
         setupEditText(t5xxlEditor);
+        llmEditor = findViewById(R.id.stringllm);
+        setupEditText(llmEditor);
+        vaeEditor = findViewById(R.id.stringvae);
+        setupEditText(vaeEditor);
         stepsEditor = findViewById(R.id.stringsteps);
         setupEditText(stepsEditor);
         seedEditor = findViewById(R.id.stringseed);
@@ -501,6 +504,12 @@ public class SDActivity extends AppCompatActivity {
             String t5 = t5xxlEditor.getText().toString();
             arguments.add("--t5xxl");
             arguments.add(t5.isEmpty() ? "\"\"" : t5);
+            String vae = vaeEditor.getText().toString();
+            arguments.add("--vae");
+            arguments.add(vae.isEmpty() ? "\"\"" :vae);
+            String llm = llmEditor.getText().toString();
+            arguments.add("--llm");
+            arguments.add(llm.isEmpty() ? "\"\"" : llm);
 
             if (!selectedQuant.equals(DEFAULT_QUANTIZER)) {
                 arguments.add("--type");
@@ -1138,7 +1147,9 @@ public class SDActivity extends AppCompatActivity {
         editsMap.put(R.id.stringprompt, SDViewModel.prefsKeyPrompt);
         editsMap.put(R.id.stringnegprompt, SDViewModel.prefsKeyNegPrompt);
         editsMap.put(R.id.stringopt, SDViewModel.prefsKeyOptions);
-        editsMap.put(R.id.stringt5xxl, SDViewModel.prefst5xxlOptions);
+        editsMap.put(R.id.stringt5xxl, SDViewModel.prefsKeyT5xxl);
+        editsMap.put(R.id.stringllm, SDViewModel.prefsKeyLlm);
+        editsMap.put(R.id.stringvae, SDViewModel.prefsKeyVae);
         editsMap.put(R.id.stringsteps, SDViewModel.prefsKeySteps);
         editsMap.put(R.id.stringseed, SDViewModel.prefsKeySeed);
         editsMap.put(R.id.stringwidth, SDViewModel.prefsKeyWidth);
@@ -1175,7 +1186,7 @@ public class SDActivity extends AppCompatActivity {
         if (editText == promptEditor || editText == negativeEditor || editText == optionsEditor) {
             editText.setOnTouchListener(editTouchListenerResetText);
         }
-        if (editText == t5xxlEditor) {
+        if (editText == t5xxlEditor || editText ==vaeEditor || editText ==llmEditor) {
             editText.setOnTouchListener(editTouchListenerGetFileName);
         }
     }
