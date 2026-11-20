@@ -13,6 +13,7 @@ public class FileSelector {
     public interface actionForFileSelector {
         void actOn(File selectedItem);
     }
+
     private AlertDialog currentDialog;
     private File currentDirectory;
     final private SDActivity sda;
@@ -20,12 +21,13 @@ public class FileSelector {
     final String fileextensions;
     final String endings;
 
-    public FileSelector(SDActivity sda, int maxsize, String fileextensions,String endings){
-        this.sda=sda;
-        this.maxsize=maxsize;
-        this.fileextensions=fileextensions;
-        this.endings=endings;
+    public FileSelector(SDActivity sda, int maxsize, String fileextensions, String endings) {
+        this.sda = sda;
+        this.maxsize = maxsize;
+        this.fileextensions = fileextensions;
+        this.endings = endings;
     }
+
     public void recursiveFolderBrowser(@NonNull File directory, actionForFileSelector action) {
         if (!directory.exists() || !directory.isDirectory()) {
             return;

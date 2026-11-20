@@ -1,5 +1,8 @@
 package local.kleine.sdcpp;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -91,7 +94,7 @@ public class SDActivity extends AppCompatActivity {
             "\\s";
 
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
-            widthEditor, heightEditor, cfgscaleEditor, optionsEditor, t5xxlEditor,  llmEditor, vaeEditor;
+            widthEditor, heightEditor, cfgscaleEditor, optionsEditor, t5xxlEditor, llmEditor, vaeEditor;
     private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker, vaetilingchecker, convdirectchecker;
     private View wrapperView;
     private ListView sdLogView;
@@ -503,13 +506,13 @@ public class SDActivity extends AppCompatActivity {
 
             String t5 = t5xxlEditor.getText().toString();
             arguments.add("--t5xxl");
-            arguments.add(t5.isEmpty() ? "\"\"" : t5);
+            arguments.add(t5.isEmpty() ? "\"\"" : sdWorkPath + File.separator + t5);
             String vae = vaeEditor.getText().toString();
             arguments.add("--vae");
-            arguments.add(vae.isEmpty() ? "\"\"" :vae);
+            arguments.add(vae.isEmpty() ? "\"\"" : sdWorkPath + File.separator + vae);
             String llm = llmEditor.getText().toString();
             arguments.add("--llm");
-            arguments.add(llm.isEmpty() ? "\"\"" : llm);
+            arguments.add(llm.isEmpty() ? "\"\"" : sdWorkPath + File.separator + llm);
 
             if (!selectedQuant.equals(DEFAULT_QUANTIZER)) {
                 arguments.add("--type");
@@ -540,12 +543,28 @@ public class SDActivity extends AppCompatActivity {
                     .replaceAll("(^" + anySpace + "+)|(" + anySpace + "+$)", "")
                     // arg1 "arg2"  "arg3 with spaces"   ""
                     .split(anySpace + "+(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-            for (int i = 0; i < args.length; i++) {
-                if (("-o".equals(args[i]) || "--output".equals(args[i])) && i < args.length - 1) {
+            int batchsize = 1;
+            for (int i = 0; i < args.length - 1; i++) {
+                if ("-o".equals(args[i]) || "--output".equals(args[i])) {
                     i++; // get next arg and remove dangerous chars
                     args[i] = args[i].replaceAll("[^a-zA-Z0-9._-]", "") + selectedExt;
                     localOutputImagePath = sdWorkPath + "/" + args[i];
+                } else {
+                    if ("-b".equals(args[i]) || "--batch-count".equals(args[i])) {
+                        try {
+                            i++; // get next arg (batch count)
+                            batchsize = max(Integer.parseInt(args[i]), 1);
+                        } catch (NumberFormatException ex) {
+                            batchsize = 1;
+                        }
+                        args[i] = batchsize + "";
+                    }
                 }
+            }
+            if (batchsize > 1) {
+                // use the first picture for display e,g, outputX_0.png
+                // (file names like outputX_%03d is not yet supported)
+                localOutputImagePath = localOutputImagePath.replaceFirst("^(.*)(\\.[^.]+)$", "$1_0$2");
             }
             if (!args[0].isEmpty()) arguments.addAll(Arrays.asList(args));
             if (writeCmdlineChecker.isChecked()) {
@@ -1044,7 +1063,7 @@ public class SDActivity extends AppCompatActivity {
         // selects position 0 when string is absent
         // cast to ArrayAdapter<String> is safe for SpinnerAdapter with strings
         //noinspection unchecked
-        spinner.setSelection(Math.max(0, ((ArrayAdapter<String>) spinner.getAdapter()).getPosition(val)));
+        spinner.setSelection(max(0, ((ArrayAdapter<String>) spinner.getAdapter()).getPosition(val)));
     }
 
     private void setupSpinner(@NonNull Spinner spinner) {
@@ -1186,7 +1205,7 @@ public class SDActivity extends AppCompatActivity {
         if (editText == promptEditor || editText == negativeEditor || editText == optionsEditor) {
             editText.setOnTouchListener(editTouchListenerResetText);
         }
-        if (editText == t5xxlEditor || editText ==vaeEditor || editText ==llmEditor) {
+        if (editText == t5xxlEditor || editText == vaeEditor || editText == llmEditor) {
             editText.setOnTouchListener(editTouchListenerGetFileName);
         }
     }
@@ -1216,15 +1235,18 @@ public class SDActivity extends AppCompatActivity {
 
     public static class action implements FileSelector.actionForFileSelector {
         EditText editText;
+        int substr_begin;
 
         public void actOn(File selectedItem) {
             if (selectedItem != null) {
-                editText.setText(selectedItem.getAbsolutePath());
+                // entries of this editText are shortened
+                editText.setText(selectedItem.getAbsolutePath().substring(substr_begin));
             }
         }
 
-        public action(EditText editText) {
+        public action(EditText editText, int substr_begin) {
             this.editText = editText;
+            this.substr_begin = substr_begin;
         }
     }
 
@@ -1234,7 +1256,7 @@ public class SDActivity extends AppCompatActivity {
             if (((EditText) v).getCompoundDrawables()[2] != null) {
                 int iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
                 if (event.getRawX() >= (v.getRight() - iconWidth - (v).getPaddingEnd())) {
-                    FileSelector.actionForFileSelector actionToBeExecuted = new action((EditText) v);
+                    FileSelector.actionForFileSelector actionToBeExecuted = new action((EditText) v, sdWorkPath.length() + 1);
                     FileSelector fsel = new FileSelector(this, -1, ".safetensors|.gguf", "");
                     fsel.recursiveFolderBrowser(new File(sdWorkPath), actionToBeExecuted);
                     v.performClick();
