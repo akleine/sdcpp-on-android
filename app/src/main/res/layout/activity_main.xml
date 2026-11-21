@@ -39,7 +39,7 @@
                     android:labelFor="@id/stringpromptmsg"
                     android:singleLine="false"
                     android:text="@string/default_prompt"
-                    android:drawableEnd="@drawable/close_circle"
+                    android:drawableRight="@drawable/close_circle"
                     tools:ignore="Autofill,TouchTargetSizeCheck" />
             </LinearLayout>
 
@@ -65,7 +65,7 @@
                     android:labelFor="@id/stringnegpromptmsg"
                     android:singleLine="false"
                     android:text="@string/default_negative"
-                    android:drawableEnd="@drawable/close_circle"
+                    android:drawableRight="@drawable/close_circle"
                     tools:ignore="autofill,TouchTargetSizeCheck" />
             </LinearLayout>
 
@@ -506,7 +506,7 @@
                                 android:inputType="text"
                                 android:labelFor="@id/stringpromptmsg"
                                 android:singleLine="true"
-                                android:text="--fa"
+                                android:text="@string/options"
                                 android:drawableEnd="@drawable/close_circle"
                                 tools:ignore="Autofill,TouchTargetSizeCheck" />
 
@@ -526,7 +526,8 @@
                                 android:labelFor="@id/stringpromptmsg"
                                 android:singleLine="false"
                                 android:text=""
-                                android:drawableEnd="@drawable/folder_open"
+                                android:drawableRight="@drawable/close_circle"
+                                android:drawableLeft="@drawable/folder_open"
                                 tools:ignore="Autofill,TouchTargetSizeCheck" />
 
                             <TextView
@@ -545,7 +546,8 @@
                                 android:labelFor="@id/stringllm"
                                 android:singleLine="false"
                                 android:text=""
-                                android:drawableEnd="@drawable/folder_open"
+                                android:drawableRight="@drawable/close_circle"
+                                android:drawableLeft="@drawable/folder_open"
                                 tools:ignore="Autofill,TouchTargetSizeCheck" />
 
                             <TextView
@@ -564,7 +566,8 @@
                                 android:labelFor="@id/stringvaemsg"
                                 android:singleLine="false"
                                 android:text=""
-                                android:drawableEnd="@drawable/folder_open"
+                                android:drawableRight="@drawable/close_circle"
+                                android:drawableLeft="@drawable/folder_open"
                                 tools:ignore="Autofill,TouchTargetSizeCheck" />
 
                         </LinearLayout>

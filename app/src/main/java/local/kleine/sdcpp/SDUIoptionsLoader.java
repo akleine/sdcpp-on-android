@@ -88,24 +88,35 @@ public class SDUIoptionsLoader implements View.OnClickListener {
 
     private void parseShellScript(String input) {
         View v;
+        String optionValue;
+        String workPathPattern = Pattern.quote(sda.sdWorkPath + File.separator);  // used for some entries that are shortened
         List<String> tokens = tokenize(input);
         for (int i = 0; i < tokens.size(); i++) {
             String option = tokens.get(i);
             if (optionsUIIdMap.containsKey(option)) {
                 v = sda.findViewById(optionsUIIdMap.get(option));
                 if (v instanceof EditText) {
-                    ((EditText) v).setText(tokens.get(++i));
+                    if (++i < tokens.size()) {
+                        optionValue = tokens.get(i);
+                        if (v.equals(sda.findViewById(R.id.stringt5xxl))
+                                || v.equals(sda.findViewById(R.id.stringllm))
+                                || v.equals(sda.findViewById(R.id.stringvae))) {
+                            optionValue = optionValue.replaceFirst(workPathPattern, "");
+                        }
+                        ((EditText) v).setText(optionValue);
+                    }
                 } else {
                     if (v instanceof Spinner) {
-                        String optionValue = tokens.get(++i);
-                        if (v.equals(sda.findViewById(R.id.model_spinner))) {
-                            // entries of this spinner are shortened
-                            optionValue = optionValue.substring(sda.sdWorkPath.length() + 1);
-                        }
-                        //noinspection unchecked
-                        ArrayAdapter<String> adapter = (ArrayAdapter<String>) ((Spinner) v).getAdapter();
-                        if (adapter.getPosition(optionValue) >= 0) {
-                            ((Spinner) v).setSelection(adapter.getPosition(optionValue));
+                        if (++i < tokens.size()) {
+                            optionValue = tokens.get(i);
+                            if (v.equals(sda.findViewById(R.id.model_spinner))) {
+                                optionValue = optionValue.replaceFirst(workPathPattern, "");
+                            }
+                            //noinspection unchecked
+                            ArrayAdapter<String> adapter = (ArrayAdapter<String>) ((Spinner) v).getAdapter();
+                            if (adapter.getPosition(optionValue) >= 0) {
+                                ((Spinner) v).setSelection(adapter.getPosition(optionValue));
+                            }
                         }
                     } else {
                         if (v instanceof CheckBox) {

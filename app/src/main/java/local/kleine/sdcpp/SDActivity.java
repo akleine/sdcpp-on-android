@@ -1,7 +1,6 @@
 package local.kleine.sdcpp;
 
 import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -503,17 +502,6 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--diffusion-conv-direct");
                 arguments.add("--vae-conv-direct");
             }
-
-            String t5 = t5xxlEditor.getText().toString();
-            arguments.add("--t5xxl");
-            arguments.add(t5.isEmpty() ? "\"\"" : sdWorkPath + File.separator + t5);
-            String vae = vaeEditor.getText().toString();
-            arguments.add("--vae");
-            arguments.add(vae.isEmpty() ? "\"\"" : sdWorkPath + File.separator + vae);
-            String llm = llmEditor.getText().toString();
-            arguments.add("--llm");
-            arguments.add(llm.isEmpty() ? "\"\"" : sdWorkPath + File.separator + llm);
-
             if (!selectedQuant.equals(DEFAULT_QUANTIZER)) {
                 arguments.add("--type");
                 arguments.add(selectedQuant);
@@ -525,6 +513,15 @@ public class SDActivity extends AppCompatActivity {
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
             } else {
+                String t5 = t5xxlEditor.getText().toString();
+                arguments.add("--t5xxl");
+                arguments.add(t5.isEmpty() ? "\"\"" : sdWorkPath + File.separator + t5);
+                String vae = vaeEditor.getText().toString();
+                arguments.add("--vae");
+                arguments.add(vae.isEmpty() ? "\"\"" : sdWorkPath + File.separator + vae);
+                String llm = llmEditor.getText().toString();
+                arguments.add("--llm");
+                arguments.add(llm.isEmpty() ? "\"\"" : sdWorkPath + File.separator + llm);
                 sdFileName = SDlibopenCL;
                 tempFolderPath = getApplicationContext().getCacheDir().getAbsolutePath();
                 libPath += ":" + libVendorPath;
@@ -766,7 +763,6 @@ public class SDActivity extends AppCompatActivity {
             viewWindow.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
             coverView.setAlpha(0.0f);
             closeButton.setVisibility(View.VISIBLE);
-
             GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
@@ -1123,11 +1119,10 @@ public class SDActivity extends AppCompatActivity {
             convdirectchecker.setChecked(checked);
             String model = selectedModelfile.toUpperCase();
             if (gpuchecker.isChecked()) {
-                // these settings seem to work quite well at openCL/ADRENO 810
-                // "f16" is optimal for huge VRAM or very small models like SDXS
-                selectSpinnerString(quant_spinner,
-                        model.contains("SDXS") ? "f16" : "q4_0");
-            } else {  // cpu
+                selectSpinnerString(quant_spinner, "default");
+                //selectSpinnerString(quant_spinner,
+                //        model.contains("SDXS") ? "f16" : "q4_0");
+            } else {  // cpu,
                 // for some budget devices with low RAM and NO usable openCL drivers:
                 if (model.contains("SSD")) {
                     selectSpinnerString(quant_spinner, "q8_0");
@@ -1202,12 +1197,7 @@ public class SDActivity extends AppCompatActivity {
             editText.setText(tn);
         }
         editText.setOnFocusChangeListener(editFocusListener);
-        if (editText == promptEditor || editText == negativeEditor || editText == optionsEditor) {
-            editText.setOnTouchListener(editTouchListenerResetText);
-        }
-        if (editText == t5xxlEditor || editText == vaeEditor || editText == llmEditor) {
-            editText.setOnTouchListener(editTouchListenerGetFileName);
-        }
+        editText.setOnTouchListener(editTouchListener);
     }
 
     final private View.OnFocusChangeListener editFocusListener = (v, hasFocus) -> {
@@ -1218,15 +1208,25 @@ public class SDActivity extends AppCompatActivity {
         }
     };
 
-    final private View.OnTouchListener editTouchListenerResetText = (v, event) -> {
+    final private View.OnTouchListener editTouchListener = (v, event) -> {
         if (event.getAction() == MotionEvent.ACTION_UP) {
             v.performClick();
+            int iconWidth;
             if (((EditText) v).getCompoundDrawables()[2] != null) {
-                int iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
+                iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
                 if (event.getRawX() >= (v.getRight() - iconWidth - (v).getPaddingEnd())) {
                     ((EditText) v).setText("");
-                    v.performClick();
                     return true;
+                } else {
+                    if (((EditText) v).getCompoundDrawables()[0] != null) {
+                        iconWidth = ((EditText) v).getCompoundDrawables()[0].getBounds().width();
+                        if (event.getRawX() <= (v.getLeft() + iconWidth + (v).getPaddingLeft())) {
+                            FileSelector.actionForFileSelector actionToBeExecuted = new action((EditText) v, sdWorkPath.length() + 1);
+                            FileSelector fsel = new FileSelector(this, -1, ".safetensors|.gguf", "");
+                            fsel.recursiveFolderBrowser(new File(sdWorkPath), actionToBeExecuted);
+                            return true;
+                        }
+                    }
                 }
             }
         }
@@ -1234,8 +1234,8 @@ public class SDActivity extends AppCompatActivity {
     };
 
     public static class action implements FileSelector.actionForFileSelector {
-        EditText editText;
-        int substr_begin;
+        private final EditText editText;
+        private final int substr_begin;
 
         public void actOn(File selectedItem) {
             if (selectedItem != null) {
@@ -1250,20 +1250,4 @@ public class SDActivity extends AppCompatActivity {
         }
     }
 
-    final private View.OnTouchListener editTouchListenerGetFileName = (v, event) -> {
-        if (event.getAction() == MotionEvent.ACTION_UP) {
-            v.performClick();
-            if (((EditText) v).getCompoundDrawables()[2] != null) {
-                int iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
-                if (event.getRawX() >= (v.getRight() - iconWidth - (v).getPaddingEnd())) {
-                    FileSelector.actionForFileSelector actionToBeExecuted = new action((EditText) v, sdWorkPath.length() + 1);
-                    FileSelector fsel = new FileSelector(this, -1, ".safetensors|.gguf", "");
-                    fsel.recursiveFolderBrowser(new File(sdWorkPath), actionToBeExecuted);
-                    v.performClick();
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
 }
