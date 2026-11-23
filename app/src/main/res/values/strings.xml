@@ -42,4 +42,5 @@
     <string name="t5xxl">t5xxl file:</string>
     <string name="vae">vae file:</string>
     <string name="llm">llm file:</string>
+    <string name="clip_l">clip_l file:</string>
 </resources>

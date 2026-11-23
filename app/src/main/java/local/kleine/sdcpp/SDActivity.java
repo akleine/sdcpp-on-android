@@ -93,7 +93,7 @@ public class SDActivity extends AppCompatActivity {
             "\\s";
 
     private EditText promptEditor, negativeEditor, seedEditor, stepsEditor,
-            widthEditor, heightEditor, cfgscaleEditor, optionsEditor, t5xxlEditor, llmEditor, vaeEditor;
+            widthEditor, heightEditor, cfgscaleEditor, optionsEditor, t5xxlEditor, llmEditor, vaeEditor, clip_lEditor;
     private CheckBox taesdchecker, taesdXLchecker, embeddchecker, gpuchecker, writeCmdlineChecker, vaetilingchecker, convdirectchecker;
     private View wrapperView;
     private ListView sdLogView;
@@ -324,6 +324,8 @@ public class SDActivity extends AppCompatActivity {
         setupEditText(t5xxlEditor);
         llmEditor = findViewById(R.id.stringllm);
         setupEditText(llmEditor);
+        clip_lEditor = findViewById(R.id.stringclip_l);
+        setupEditText(clip_lEditor);
         vaeEditor = findViewById(R.id.stringvae);
         setupEditText(vaeEditor);
         stepsEditor = findViewById(R.id.stringsteps);
@@ -506,22 +508,32 @@ public class SDActivity extends AppCompatActivity {
                 arguments.add("--type");
                 arguments.add(selectedQuant);
             }
-            if (model.contains("MINIT2I") || model.contains("ZIMAGE")) {
+            if (model.contains("MINIT2I") || model.contains("ZIMAGE") || model.contains("FLUX")) {
                 arguments.set(1, "--diffusion-model"); // replace "-m"
-                // Currently other needed options like "--t5xxl" or "--llm" or "--vae" must be entered via "additional options"
             }
             if (!gpuchecker.isChecked()) {
                 sdFileName = SDlib;
             } else {
-                String t5 = t5xxlEditor.getText().toString();
-                arguments.add("--t5xxl");
-                arguments.add(t5.isEmpty() ? "\"\"" : sdWorkPath + File.separator + t5);
-                String vae = vaeEditor.getText().toString();
-                arguments.add("--vae");
-                arguments.add(vae.isEmpty() ? "\"\"" : sdWorkPath + File.separator + vae);
-                String llm = llmEditor.getText().toString();
-                arguments.add("--llm");
-                arguments.add(llm.isEmpty() ? "\"\"" : sdWorkPath + File.separator + llm);
+                String val = t5xxlEditor.getText().toString();
+                if (!val.isEmpty()) {
+                    arguments.add("--t5xxl");
+                    arguments.add(sdWorkPath + File.separator + val);
+                }
+                val = vaeEditor.getText().toString();
+                if (!val.isEmpty()) {
+                    arguments.add("--vae");
+                    arguments.add(sdWorkPath + File.separator + val);
+                }
+                val = llmEditor.getText().toString();
+                if (!val.isEmpty()) {
+                    arguments.add("--llm");
+                    arguments.add(sdWorkPath + File.separator + val);
+                }
+                val = clip_lEditor.getText().toString();
+                if (!val.isEmpty()) {
+                    arguments.add("--clip_l");
+                    arguments.add(sdWorkPath + File.separator + val);
+                }
                 sdFileName = SDlibopenCL;
                 tempFolderPath = getApplicationContext().getCacheDir().getAbsolutePath();
                 libPath += ":" + libVendorPath;
@@ -1163,6 +1175,7 @@ public class SDActivity extends AppCompatActivity {
         editsMap.put(R.id.stringopt, SDViewModel.prefsKeyOptions);
         editsMap.put(R.id.stringt5xxl, SDViewModel.prefsKeyT5xxl);
         editsMap.put(R.id.stringllm, SDViewModel.prefsKeyLlm);
+        editsMap.put(R.id.stringclip_l, SDViewModel.prefsKeyClip_l);
         editsMap.put(R.id.stringvae, SDViewModel.prefsKeyVae);
         editsMap.put(R.id.stringsteps, SDViewModel.prefsKeySteps);
         editsMap.put(R.id.stringseed, SDViewModel.prefsKeySeed);
@@ -1213,12 +1226,15 @@ public class SDActivity extends AppCompatActivity {
             v.performClick();
             int iconWidth;
             if (((EditText) v).getCompoundDrawables()[2] != null) {
+                // right side button
                 iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
                 if (event.getRawX() >= (v.getRight() - iconWidth - (v).getPaddingEnd())) {
+                    v.requestFocus();
                     ((EditText) v).setText("");
                     return true;
                 } else {
                     if (((EditText) v).getCompoundDrawables()[0] != null) {
+                        // left side button
                         iconWidth = ((EditText) v).getCompoundDrawables()[0].getBounds().width();
                         if (event.getRawX() <= (v.getLeft() + iconWidth + (v).getPaddingLeft())) {
                             FileSelector.actionForFileSelector actionToBeExecuted = new action((EditText) v, sdWorkPath.length() + 1);
@@ -1240,6 +1256,7 @@ public class SDActivity extends AppCompatActivity {
         public void actOn(File selectedItem) {
             if (selectedItem != null) {
                 // entries of this editText are shortened
+                editText.requestFocus();
                 editText.setText(selectedItem.getAbsolutePath().substring(substr_begin));
             }
         }

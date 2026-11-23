@@ -503,9 +503,9 @@
                                 android:id="@+id/stringopt"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="text"
+                                android:inputType="textMultiLine"
                                 android:labelFor="@id/stringpromptmsg"
-                                android:singleLine="true"
+                                android:singleLine="false"
                                 android:text="@string/options"
                                 android:drawableEnd="@drawable/close_circle"
                                 tools:ignore="Autofill,TouchTargetSizeCheck" />
@@ -522,7 +522,7 @@
                                 android:id="@+id/stringt5xxl"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="text"
+                                android:inputType="textMultiLine"
                                 android:labelFor="@id/stringpromptmsg"
                                 android:singleLine="false"
                                 android:text=""
@@ -544,6 +544,26 @@
                                 android:layout_height="wrap_content"
                                 android:inputType="textMultiLine"
                                 android:labelFor="@id/stringllm"
+                                android:singleLine="false"
+                                android:text=""
+                                android:drawableRight="@drawable/close_circle"
+                                android:drawableLeft="@drawable/folder_open"
+                                tools:ignore="Autofill,TouchTargetSizeCheck" />
+
+                            <TextView
+                                android:id="@+id/stringclip_lmsg"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:labelFor="@id/stringclip_l"
+                                android:text="@string/clip_l"
+                                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                            <EditText
+                                android:id="@+id/stringclip_l"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textMultiLine"
+                                android:labelFor="@id/stringclip_lmsg"
                                 android:singleLine="false"
                                 android:text=""
                                 android:drawableRight="@drawable/close_circle"

@@ -44,6 +44,7 @@ public class SDUIoptionsLoader implements View.OnClickListener {
         optionsUIIdMap.put("--t5xxl", R.id.stringt5xxl);
         optionsUIIdMap.put("--vae", R.id.stringvae);
         optionsUIIdMap.put("--llm", R.id.stringllm);
+        optionsUIIdMap.put("--clip_l", R.id.stringclip_l);
         //-- pseudo options for setting UI elements --
         optionsUIIdMap.put("--use-taesd", R.id.taesdchecker);
         optionsUIIdMap.put("--no-taesd", R.id.taesdchecker); // "--no-" == inversed
@@ -88,21 +89,32 @@ public class SDUIoptionsLoader implements View.OnClickListener {
 
     private void parseShellScript(String input) {
         View v;
-        String optionValue;
+        EditText t5xxlEditor = sda.findViewById(R.id.stringt5xxl);
+        EditText llmEditor = sda.findViewById(R.id.stringllm);
+        EditText vaeEditor = sda.findViewById(R.id.stringvae);
+        EditText clip_lEditor = sda.findViewById(R.id.stringclip_l);
+        t5xxlEditor.requestFocus();
+        t5xxlEditor.setText(""); // empty file selector driven fields
+        llmEditor.requestFocus();
+        llmEditor.setText("");
+        vaeEditor.requestFocus();
+        vaeEditor.setText("");
+        clip_lEditor.requestFocus();
+        clip_lEditor.setText("");
         String workPathPattern = Pattern.quote(sda.sdWorkPath + File.separator);  // used for some entries that are shortened
         List<String> tokens = tokenize(input);
         for (int i = 0; i < tokens.size(); i++) {
             String option = tokens.get(i);
             if (optionsUIIdMap.containsKey(option)) {
                 v = sda.findViewById(optionsUIIdMap.get(option));
+                String optionValue;
                 if (v instanceof EditText) {
                     if (++i < tokens.size()) {
                         optionValue = tokens.get(i);
-                        if (v.equals(sda.findViewById(R.id.stringt5xxl))
-                                || v.equals(sda.findViewById(R.id.stringllm))
-                                || v.equals(sda.findViewById(R.id.stringvae))) {
+                        if (v.equals(t5xxlEditor) || v.equals(llmEditor) || v.equals(vaeEditor) || v.equals(clip_lEditor)) {
                             optionValue = optionValue.replaceFirst(workPathPattern, "");
                         }
+                        v.requestFocus();
                         ((EditText) v).setText(optionValue);
                     }
                 } else {
