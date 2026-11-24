@@ -142,11 +142,9 @@ public class SDUIoptionsLoader implements View.OnClickListener {
 
     public class action implements FileSelector.actionForFileSelector {
         public void actOn(File selectedItem) {
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(selectedItem));
+            try (BufferedReader reader = new BufferedReader(new FileReader(selectedItem))) {
                 String cmdline = reader.lines().collect(Collectors.joining());
                 parseShellScript(cmdline);
-                reader.close();
             } catch (IOException ignored) {
             }
         }
