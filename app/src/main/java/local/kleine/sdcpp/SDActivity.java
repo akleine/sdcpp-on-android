@@ -387,7 +387,7 @@ public class SDActivity extends AppCompatActivity {
                 detailsLayout.setLayoutParams(lp);
             });
         }
-        View.OnClickListener detailsTogggler = v -> {
+        View.OnClickListener detailsToggler = v -> {
             ViewGroup.LayoutParams wlp = detailsWrapper.getLayoutParams();
             ViewGroup.LayoutParams lp = detailsLayout.getLayoutParams();
             vm.make_open = wlp.height != ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -401,8 +401,8 @@ public class SDActivity extends AppCompatActivity {
             detailsArrow.setRotation(vm.make_open ? 0 : 270);
             detailsCaption.setText(getString(vm.make_open ? R.string.more_settings_opened : R.string.more_settings_closed));
         };
-        detailsHeader.setOnClickListener(detailsTogggler);
-        detailsFooter.setOnClickListener(detailsTogggler);
+        detailsHeader.setOnClickListener(detailsToggler);
+        detailsFooter.setOnClickListener(detailsToggler);
 
         // checkboxes may switch each other, therefore
         // all references are needed before setup
@@ -670,16 +670,21 @@ public class SDActivity extends AppCompatActivity {
 
     public void subFinished(int exitcode, final String msg) {
         runOnUiThread(() -> {
-            File file = new File(sd_thread.outputImagePath);
-            if (exitcode == 0 && file.exists()) {
+            /* When subFinished() is called from sdIOThread constructor,
+            ** sd_thread field should still be null.
+            ** Creating a local copy to avoid race condition
+            */
+            final sdIOThread thread = sd_thread;
+            File file = (thread == null) ? null : new File(thread.outputImagePath);
+            if (exitcode == 0 && file != null && file.exists()) {
                 imageOutputView.setVisibility(View.VISIBLE);
                 if (vm.getPrefBoolean(SDViewModel.prefsKeyLog, true)) {
                     StringBuilder sb = new StringBuilder();
-                    for (String line : sd_thread.outputArrayList)
+                    for (String line : thread.outputArrayList)
                         sb.append(line).append("\n");
                     String alllog = sb.toString();
                     try {
-                        BufferedWriter writer = new BufferedWriter(new FileWriter(sd_thread.outputImagePath + ".log.txt"));
+                        BufferedWriter writer = new BufferedWriter(new FileWriter(thread.outputImagePath + ".log.txt"));
                         writer.write(alllog);
                         writer.close();
                     } catch (IOException e) {
@@ -1004,7 +1009,7 @@ public class SDActivity extends AppCompatActivity {
         };
     }
 
-    public class ItemSelectedListener implements AdapterView.OnItemSelectedListener {
+    final private AdapterView.OnItemSelectedListener spinnerListener = new AdapterView.OnItemSelectedListener() {
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             if (parent.getId() == R.id.model_spinner) {
@@ -1053,9 +1058,7 @@ public class SDActivity extends AppCompatActivity {
         @Override
         public void onNothingSelected(AdapterView<?> parent) {
         }
-    }
-
-    final private ItemSelectedListener spinnerListener = new ItemSelectedListener();
+    };
 
     final private static Map<Integer, String> spinnersMap = new HashMap<>();
 
