@@ -34,6 +34,7 @@
         </activity>
         <activity
             android:name=".SDActivity"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/MyApplication">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
