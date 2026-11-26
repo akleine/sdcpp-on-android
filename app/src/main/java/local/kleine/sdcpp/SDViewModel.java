@@ -15,10 +15,10 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeyPrompt    = "prefs_prompt";
     public static final String prefsKeyNegPrompt = "prefs_neg_prompt";
     public static final String prefsKeyOptions   = "prefs_options";
-    public static final String prefsKeyT5xxl = "prefs_t5xxl";
-    public static final String prefsKeyLlm   = "prefs_llm";
-    public static final String prefsKeyClip_l   = "prefs_clip_l";
-    public static final String prefsKeyVae   = "prefs_vae";
+    public static final String prefsKeyT5xxl     = "prefs_t5xxl";
+    public static final String prefsKeyLlm       = "prefs_llm";
+    public static final String prefsKeyClip_l    = "prefs_clip_l";
+    public static final String prefsKeyVae       = "prefs_vae";
     public static final String prefsKeySteps     = "prefs_steps";
     public static final String prefsKeySeed      = "prefs_seed";
     public static final String prefsKeyWidth     = "prefs_width";
@@ -38,7 +38,7 @@ public class SDViewModel extends AndroidViewModel {
     public static final String prefsKeySampler   = "prefs_sampler";
     public static final String prefsKeyScheduler = "prefs_scheduler";
     public static final String prefsKeyExt       = "prefs_ext";
-    public static final String prefsKeyQuant       = "prefs_quant";
+    public static final String prefsKeyQuant     = "prefs_quant";
     /*
     ** caches previous values, since SharedPreferences.Editor
     ** does not have methods to get temporary values from its memory
