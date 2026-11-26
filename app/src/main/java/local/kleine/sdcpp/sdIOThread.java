@@ -1,5 +1,7 @@
 package local.kleine.sdcpp;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -14,7 +16,7 @@ class sdIOThread extends Thread implements Runnable {
     final private static Object process_lock = new Object();
     private volatile SDActivity myActivity;
     private boolean wasNotInterrupted = false;
-
+    private static final String LOG_TAG = "sdIOThread";
     // helpers for message log
     private String lastMsg = "";
     private boolean lastProgressBar = false;
@@ -39,11 +41,22 @@ class sdIOThread extends Thread implements Runnable {
             process = processBuilder.start();
             myActivity.processInfo("sd.cpp started");
         } catch (Exception e) {
+            String emsg = e.getMessage();
+            if (emsg == null)
+                emsg = "null";
+            Log.e(LOG_TAG, "Process creation exception:");
+            Log.e(LOG_TAG, e.toString());
+            Log.e(LOG_TAG, emsg);
+            Log.e(LOG_TAG, "sdWorkPath: " + sdWorkPath);
+            Log.e(LOG_TAG, "arguments:");
+            for (String a : arguments) {
+                Log.e(LOG_TAG, a == null ? "null" : a);
+            }
             processDestroy();
-            String msg = myActivity.getString(R.string.can_not_run_sd_process) + e.getMessage();
             myActivity.addScreenDimmer();
-            myActivity.subFinished(0, msg);
-            debugMsg(msg);
+            // process is probably null and processInfo() will not work,
+            // therefore using sunFinished() to notify
+            myActivity.subFinished(0, myActivity.getString(R.string.can_not_run_sd_process) + emsg);
             myActivity.restoreScreenBrightness();
         }
     }
