@@ -347,7 +347,7 @@ public class SDActivity extends AppCompatActivity {
         }
         Collections.sort(fileList);
         model_spinner = findViewById(R.id.model_spinner);
-        model_spinner.setOnItemSelectedListener(new ItemSelectedListener());
+        ////////////  model_spinner.setOnItemSelectedListener(new ItemSelectedListener());
         ArrayAdapter<String> model_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, fileList);
         model_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         model_spinner.setAdapter(model_adapter);
