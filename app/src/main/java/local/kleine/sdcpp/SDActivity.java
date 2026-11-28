@@ -73,7 +73,8 @@ public class SDActivity extends AppCompatActivity {
     @NonNull
     private String selectedModelfile = "";
     private String selectedSampler, selectedScheduler, taesdModel, taesdXLModel;
-    private String sdProgramPath, helperPath, libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
+    private String helperPath = "";
+    private String sdProgramPath, libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
     private final static String libVendorPath = "/vendor/lib64";  // no support possible for 32 bit with openCL
     private final static String ChklibopenCL = "libchkopenCL.so";
     private final static String SDlibopenCL = "libsdopenCL.so";
@@ -280,9 +281,9 @@ public class SDActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     public void runSDcpp() {
+        setupLogWindow();
         if (sd_thread != null) {
             // SD.cpp is launched or was finished, displaying the log
-            setupLogWindow();
             wrapperView.setVisibility(View.GONE);
             addScreenDimmer();
             if (sd_thread.process != null)
@@ -297,22 +298,8 @@ public class SDActivity extends AppCompatActivity {
             return;
         }
         nativeLibDir = new File(getApplicationInfo().nativeLibraryDir);
-        boolean canUseOpenCL = false;
-        if (checkOpenCLdriver()) {
-            final String[] libs = nativeLibDir.list();
-            if (libs != null) {
-                for (String lib : libs) {
-                    if (lib.equals(SDlibopenCL)) {
-                        canUseOpenCL = true;
-                        break;
-                    }
-                }
-            }
-        }
-        setupLogWindow();
 
-        Button fileSelectButton = findViewById(R.id.fileSelectButton);
-        fileSelectButton.setOnClickListener(new SDUIoptionsLoader());
+        // edittexts
         promptEditor = findViewById(R.id.stringprompt);
         setupEditText(promptEditor);
         promptEditor.addTextChangedListener(createTextWatcher());
@@ -338,16 +325,13 @@ public class SDActivity extends AppCompatActivity {
         setupEditText(heightEditor);
         cfgscaleEditor = findViewById(R.id.stringcfgscale);
         setupEditText(cfgscaleEditor);
-        Button submitButton = findViewById(R.id.submitButton);
 
+        // fills taesdModel, taesdXLModel, helperPath
         fileList = listExternalFiles(sdWorkPath);
-        if (fileList.isEmpty()) {
-            submitButton.setEnabled(false);
-            fileList.add("At first copy SD model file to this device.");
-        }
+
+        // spinners
         Collections.sort(fileList);
         model_spinner = findViewById(R.id.model_spinner);
-        ////////////  model_spinner.setOnItemSelectedListener(new ItemSelectedListener());
         ArrayAdapter<String> model_adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, fileList);
         model_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         model_spinner.setAdapter(model_adapter);
@@ -404,8 +388,7 @@ public class SDActivity extends AppCompatActivity {
         detailsHeader.setOnClickListener(detailsToggler);
         detailsFooter.setOnClickListener(detailsToggler);
 
-        // checkboxes may switch each other, therefore
-        // all references are needed before setup
+        // checkboxes
         taesdchecker = findViewById(R.id.taesdchecker);
         taesdXLchecker = findViewById(R.id.taesdXLchecker);
         embeddchecker = findViewById(R.id.embeddchecker);
@@ -414,43 +397,31 @@ public class SDActivity extends AppCompatActivity {
         convdirectchecker = findViewById(R.id.convdirect);
         writeCmdlineChecker = findViewById(R.id.writecmdchecker);
         CheckBox writeLogChecker = findViewById(R.id.writelogchecker);
-
         setupCheckBox(taesdchecker, true, taesdCheckListener);  // suggest by default
-        if (taesdModel.isEmpty()) {
-            // override user choice if Taesd is not available anymore
-            taesdchecker.setChecked(false);  // off state does not affect anything
-            taesdchecker.setEnabled(false);
-        } else {
-            TextView taesdview = findViewById(R.id.taesdmodel);
-            taesdview.setText(taesdModel.substring(taesdModel.lastIndexOf('/') + 1) + "  (in lora path)");
-        }
         setupCheckBox(taesdXLchecker, true, taesdCheckListener);  // suggest by default
-        if (taesdXLModel.isEmpty()) {
-            // override user choice if TaesdXL is not available anymore
-            taesdXLchecker.setChecked(false);  // off state does not affect anything
-            taesdXLchecker.setEnabled(false);
-        } else {
-            TextView taesdXLview = findViewById(R.id.taesdXLmodel);
-            taesdXLview.setText(taesdXLModel.substring(taesdXLModel.lastIndexOf('/') + 1) + "  (in lora path)");
-        }
         setupCheckBox(embeddchecker, false, onCheckedChangeListener);  // disable embeddings by default
-        if (helperPath.isEmpty()) {
-            embeddchecker.setChecked(false);  // off state does not affect anything
-            embeddchecker.setEnabled(false);
-        }
         setupCheckBox(gpuchecker, true, new GpuCheckListener());  // enable GPU by default
-        if (!canUseOpenCL) {
-            if (gpuchecker.isChecked())        // off state affects quantizaton, therefore
-                gpuchecker.setChecked(false);  // skipping unneccessary switching
-            gpuchecker.setEnabled(false);
-        }
         setupCheckBox(vaetilingchecker, true, onCheckedChangeListener);  // enable by default to reduce memory
         setupCheckBox(convdirectchecker, true, onCheckedChangeListener);
         setupCheckBox(writeCmdlineChecker, true, onCheckedChangeListener);  // write command script by default
         setupCheckBox(writeLogChecker, true, onCheckedChangeListener);  // save log by default
 
+        // textviews
         TextView loraPathView = findViewById(R.id.lorapath);
-        loraPathView.setText(helperPath);
+        loraPathView.setText(helperPath);  // filled by listFilesRecursively()
+        if (!taesdModel.isEmpty()) {
+            TextView taesdview = findViewById(R.id.taesdmodel);
+            taesdview.setText(taesdModel.substring(taesdModel.lastIndexOf('/') + 1) + "  (in lora path)");
+        }
+        if (!taesdXLModel.isEmpty()) {
+            TextView taesdXLview = findViewById(R.id.taesdXLmodel);
+            taesdXLview.setText(taesdXLModel.substring(taesdXLModel.lastIndexOf('/') + 1) + "  (in lora path)");
+        }
+
+        // buttons
+        Button fileSelectButton = findViewById(R.id.fileSelectButton);
+        fileSelectButton.setOnClickListener(new SDUIoptionsLoader());
+        Button submitButton = findViewById(R.id.submitButton);
         submitButton.setOnClickListener(v -> {
             wrapperView.setVisibility(View.GONE);
             vm.savePreferences();
@@ -636,6 +607,42 @@ public class SDActivity extends AppCompatActivity {
             return true;
         });
 
+        // overriding user choices when it's impossible to use old settings
+        if (fileList.isEmpty()) {
+            submitButton.setEnabled(false);
+            fileList.add("At first copy SD model file to this device.");
+        }
+        boolean canUseOpenCL = false;
+        if (checkOpenCLdriver()) {
+            final String[] libs = nativeLibDir.list();
+            if (libs != null) {
+                for (String lib : libs) {
+                    if (lib.equals(SDlibopenCL)) {
+                        canUseOpenCL = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (taesdModel.isEmpty()) {
+            // override user choice if Taesd is not available anymore
+            taesdchecker.setChecked(false);  // off state does not affect anything
+            taesdchecker.setEnabled(false);
+        }
+        if (taesdXLModel.isEmpty()) {
+            // override user choice if TaesdXL is not available anymore
+            taesdXLchecker.setChecked(false);  // off state does not affect anything
+            taesdXLchecker.setEnabled(false);
+        }
+        if (helperPath.isEmpty()) {
+            embeddchecker.setChecked(false);  // off state does not affect anything
+            embeddchecker.setEnabled(false);
+        }
+        if (!canUseOpenCL) {
+            if (gpuchecker.isChecked())        // off state affects quantizaton, therefore
+                gpuchecker.setChecked(false);  // skipping unneccessary switching
+            gpuchecker.setEnabled(false);
+        }
     }
 
     @NonNull
@@ -1020,8 +1027,8 @@ public class SDActivity extends AppCompatActivity {
                 boolean isSTAR = model.contains("STAR");
                 boolean isNITRO = model.contains("NITRO");
                 if (isSDXS || isSTAR || isNITRO) {
-                    stepsEditor.setText("1");
-                    cfgscaleEditor.setText("1");
+                    updEditAndPref(stepsEditor, "1");
+                    updEditAndPref(cfgscaleEditor, "1");
                     selectSpinnerString(scheduler_spinner,
                             isSDXS ? SCHEDULER_DISCRETE : SCHEDULER_SGM_UNIFORM);
                 }
@@ -1039,8 +1046,8 @@ public class SDActivity extends AppCompatActivity {
             } else if (parent.getId() == R.id.sampler_spinner) {
                 selectedSampler = sampler_spinner.getSelectedItem().toString();
                 if (selectedSampler.contains("lcm")) {
-                    stepsEditor.setText("4");
-                    cfgscaleEditor.setText("1");
+                    updEditAndPref(stepsEditor, "4");
+                    updEditAndPref(cfgscaleEditor, "1");
                 }
             } else if (parent.getId() == R.id.scheduler_spinner) {
                 selectedScheduler = scheduler_spinner.getSelectedItem().toString();
@@ -1224,6 +1231,15 @@ public class SDActivity extends AppCompatActivity {
         }
     };
 
+    private void updEditAndPref(@NonNull EditText edit, @NonNull String text) {
+        // setting EditText and saving to preferences
+        edit.setText(text);
+        String key = editsMap.get(edit.getId());
+        if (key != null) {
+            vm.setPrefString(key, text);
+        }
+    }
+
     final private View.OnTouchListener editTouchListener = (v, event) -> {
         if (event.getAction() == MotionEvent.ACTION_UP) {
             v.performClick();
@@ -1232,15 +1248,14 @@ public class SDActivity extends AppCompatActivity {
                 // right side button
                 iconWidth = ((EditText) v).getCompoundDrawables()[2].getBounds().width();
                 if (event.getRawX() >= (v.getRight() - iconWidth - (v).getPaddingEnd())) {
-                    v.requestFocus();
-                    ((EditText) v).setText("");
+                    updEditAndPref((EditText) v, "");
                     return true;
                 } else {
                     if (((EditText) v).getCompoundDrawables()[0] != null) {
                         // left side button
                         iconWidth = ((EditText) v).getCompoundDrawables()[0].getBounds().width();
                         if (event.getRawX() <= (v.getLeft() + iconWidth + (v).getPaddingLeft())) {
-                            FileSelector.actionForFileSelector actionToBeExecuted = new action((EditText) v, sdWorkPath.length() + 1);
+                            FileSelector.actionForFileSelector actionToBeExecuted = new action(this, (EditText) v, sdWorkPath.length() + 1);
                             FileSelector fsel = new FileSelector(this, -1, ".safetensors|.gguf", "");
                             fsel.recursiveFolderBrowser(new File(sdWorkPath), actionToBeExecuted);
                             return true;
@@ -1253,18 +1268,19 @@ public class SDActivity extends AppCompatActivity {
     };
 
     public static class action implements FileSelector.actionForFileSelector {
+        private final SDActivity myActivity;
         private final EditText editText;
         private final int substr_begin;
 
         public void actOn(File selectedItem) {
             if (selectedItem != null) {
                 // entries of this editText are shortened
-                editText.requestFocus();
-                editText.setText(selectedItem.getAbsolutePath().substring(substr_begin));
+                myActivity.updEditAndPref(editText, selectedItem.getAbsolutePath().substring(substr_begin));
             }
         }
 
-        public action(EditText editText, int substr_begin) {
+        public action(SDActivity activity, EditText editText, int substr_begin) {
+            this.myActivity = activity;
             this.editText = editText;
             this.substr_begin = substr_begin;
         }
