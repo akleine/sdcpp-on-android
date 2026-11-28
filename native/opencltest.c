@@ -1,5 +1,5 @@
 // cc  -I [path to CL hdr files] opencltest.c -L /vendor/lib64 -l OpenCL -o libchkopenCL.so
-     
+
 #define CL_TARGET_OPENCL_VERSION 300
 #include <CL/cl.h>
 #include <string.h>
@@ -21,14 +21,17 @@ int chk_backend(void)
         cl_uint device_count = 0;
         cl_device_id devices[16];
         err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU,
-                             16,devices, &device_count);
+                16,devices, &device_count);
         if (err == CL_SUCCESS && device_count > 0) {
             cl_uint count2 = device_count < 16 ? device_count : 16;
             char buffer[99];
             for (cl_uint j = 0; j < count2; ++j) {
                 err = clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 99, buffer, NULL);
                 if (err == CL_SUCCESS && strstr(buffer, "Adreno")) {
-                    return 0;
+                    err = clGetDeviceInfo(devices[i],CL_DEVICE_VERSION,99,buffer,NULL);
+                    if (err == CL_SUCCESS && !strncmp(buffer, "OpenCL 3.",9)) {
+                        return 0;
+                    }
                 }
             }
         }
