@@ -72,7 +72,8 @@ public class SDActivity extends AppCompatActivity {
     private final Activity myActivity;
     @NonNull
     private String selectedModelfile = "";
-    private String selectedSampler, selectedScheduler, taesdModel, taesdXLModel;
+    private String selectedSampler, selectedScheduler;
+    private String taesdModel, taesdXLModel;
     private String sdProgramPath, helperPath, libPath, sdFileName; // Note: "sd" or "sd_cli" executable needs renaming because it is now located inside jniLibs
     private final static String libVendorPath = "/vendor/lib64";  // no support possible for 32 bit with openCL
     private final static String ChklibopenCL = "libchkopenCL.so";
